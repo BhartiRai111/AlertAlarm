@@ -21,14 +21,14 @@ public class RingProgressView extends View {
         float d = getResources().getDisplayMetrics().density;
         track.setStyle(Paint.Style.STROKE);
         track.setStrokeWidth(10 * d);
-        track.setColor(Ui.color(context, R.color.ring_track));
+        track.setColor(0x40000000);
         arc.setStyle(Paint.Style.STROKE);
         arc.setStrokeWidth(10 * d);
         arc.setStrokeCap(Paint.Cap.ROUND);
-        arc.setColor(Ui.color(context, R.color.accent));
+        arc.setColor(0xFFFFFFFF);
         halo.setStyle(Paint.Style.STROKE);
         halo.setStrokeWidth(2 * d);
-        halo.setColor(0x2E2DD4BF);
+        halo.setColor(0x40FFFFFF);
     }
 
     /** 1 = full ring (just started), 0 = empty (time is up). */

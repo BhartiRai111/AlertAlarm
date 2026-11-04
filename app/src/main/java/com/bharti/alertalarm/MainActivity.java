@@ -555,6 +555,10 @@ public class MainActivity extends AppCompatActivity {
                         || getSystemService(AlarmManager.class).canScheduleExactAlarms(),
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                         ? new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse(pkg)) : null));
+        list.add(new Check("Display over other apps",
+                "Allow \"Display over other apps\" so the alarm opens full screen even while you use the phone.",
+                Settings.canDrawOverlays(this),
+                new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse(pkg))));
         list.add(new Check("Full-screen alarm",
                 "Allow full-screen alarms so the alarm opens on the lock screen.",
                 Build.VERSION.SDK_INT < 34

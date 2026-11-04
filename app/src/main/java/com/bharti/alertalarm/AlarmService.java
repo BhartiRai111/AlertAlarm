@@ -146,6 +146,7 @@ public class AlarmService extends Service {
             started = true;
             startRinging();
             startVibration();
+            openRingingScreen();
             initTextToSpeech();
             handler.post(tick);
         }
@@ -255,6 +256,19 @@ public class AlarmService extends Service {
             getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, buildNotification(title));
         } catch (SecurityException e) {
             Log.w(TAG, "Notification permission missing", e);
+        }
+    }
+
+    /**
+     * Full-screen notifications only open the alarm screen when the phone is locked; while the phone is
+     * in use Android shows just a banner. With "Display over other apps" allowed, we can open it ourselves.
+     */
+    private void openRingingScreen() {
+        try {
+            startActivity(new Intent(this, RingingActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION));
+        } catch (Exception e) {
+            Log.w(TAG, "Could not open the alarm screen directly; the notification will open it", e);
         }
     }
 

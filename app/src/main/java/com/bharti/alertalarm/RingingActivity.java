@@ -1,10 +1,14 @@
 package com.bharti.alertalarm;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +30,14 @@ public class RingingActivity extends AppCompatActivity {
     private TextView lockPill;
     private TextView leftLabel;
     private RingProgressView ring;
+    private View root;
+    private ValueAnimator colors;
+
+    /** Colours the alarm screen cycles through while it rings (last = first, so the loop is smooth). */
+    private static final int[] RING_COLORS = {
+            0xFF0F766E, 0xFF1D4ED8, 0xFF7C3AED, 0xFFBE185D, 0xFFC2410C, 0xFF15803D, 0xFF0F766E};
+    /** Time to fade from one colour to the next. */
+    private static final long COLOR_STEP_MS = 600L;
     private long lockedUntil = 0;
 
     private final Runnable tick = new Runnable() {
@@ -56,6 +68,7 @@ public class RingingActivity extends AppCompatActivity {
         lockPill = findViewById(R.id.lockPill);
         leftLabel = findViewById(R.id.leftLabel);
         ring = findViewById(R.id.ringView);
+        root = findViewById(R.id.ringRoot);
         stopButton.setOnClickListener(v -> finish());
 
         // Back button cannot close the alarm screen while it is locked.
@@ -83,6 +96,41 @@ public class RingingActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(tick);
+        stopColors();
+    }
+
+    /** Smoothly changes the background colour again and again while the alarm rings. */
+    private void startColors() {
+        if (colors != null) {
+            return;
+        }
+        colors = ValueAnimator.ofObject(new ArgbEvaluator(), (Object[]) boxed(RING_COLORS));
+        colors.setDuration(COLOR_STEP_MS * (RING_COLORS.length - 1));
+        colors.setInterpolator(new LinearInterpolator());
+        colors.setRepeatCount(ValueAnimator.INFINITE);
+        colors.addUpdateListener(a -> paint((Integer) a.getAnimatedValue()));
+        colors.start();
+    }
+
+    private void stopColors() {
+        if (colors != null) {
+            colors.cancel();
+            colors = null;
+        }
+    }
+
+    private void paint(int color) {
+        root.setBackgroundColor(color);
+        getWindow().setStatusBarColor(color);
+        getWindow().setNavigationBarColor(color);
+    }
+
+    private static Integer[] boxed(int[] values) {
+        Integer[] out = new Integer[values.length];
+        for (int i = 0; i < values.length; i++) {
+            out[i] = values[i];
+        }
+        return out;
     }
 
     private void update() {
@@ -99,10 +147,13 @@ public class RingingActivity extends AppCompatActivity {
             untilView.setText("The alarm has stopped. Well done!");
             stopButton.setEnabled(true);
             stopButton.setText("OK");
+            stopColors();
+            paint(Ui.color(this, R.color.bg));
             return;
         }
 
         AlarmService.ensureRunning(this);
+        startColors();
 
         StringBuilder tasks = new StringBuilder();
         long start = Long.MAX_VALUE;
