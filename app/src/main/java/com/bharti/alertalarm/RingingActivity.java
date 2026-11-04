@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,7 +22,10 @@ public class RingingActivity extends AppCompatActivity {
     private TextView taskView;
     private TextView countdownView;
     private TextView untilView;
-    private Button stopButton;
+    private TextView stopButton;
+    private TextView lockPill;
+    private TextView leftLabel;
+    private RingProgressView ring;
     private long lockedUntil = 0;
 
     private final Runnable tick = new Runnable() {
@@ -51,6 +53,9 @@ public class RingingActivity extends AppCompatActivity {
         countdownView = findViewById(R.id.countdownText);
         untilView = findViewById(R.id.untilText);
         stopButton = findViewById(R.id.stopButton);
+        lockPill = findViewById(R.id.lockPill);
+        leftLabel = findViewById(R.id.leftLabel);
+        ring = findViewById(R.id.ringView);
         stopButton.setOnClickListener(v -> finish());
 
         // Back button cannot close the alarm screen while it is locked.
@@ -86,8 +91,12 @@ public class RingingActivity extends AppCompatActivity {
 
         if (active.isEmpty()) {
             lockedUntil = 0;
-            countdownView.setText("Time's up ✓");
-            untilView.setText("The alarm has stopped.");
+            lockPill.setText("Unlocked");
+            Ui.tintStart(lockPill, R.drawable.ic_check, R.color.accent);
+            countdownText("Done");
+            leftLabel.setText("time's up");
+            ring.setProgress(0f);
+            untilView.setText("The alarm has stopped. Well done!");
             stopButton.setEnabled(true);
             stopButton.setText("OK");
             return;
@@ -96,22 +105,34 @@ public class RingingActivity extends AppCompatActivity {
         AlarmService.ensureRunning(this);
 
         StringBuilder tasks = new StringBuilder();
+        long start = Long.MAX_VALUE;
         long end = 0;
         for (Reminder r : active) {
             if (tasks.length() > 0) {
                 tasks.append('\n');
             }
-            tasks.append("• ").append(r.task);
+            tasks.append(r.task);
+            start = Math.min(start, r.startMillis);
             end = Math.max(end, r.endMillis);
         }
         lockedUntil = end;
 
         long left = Math.max(0, end - now) / 1000;
-        taskView.setText(tasks);
-        countdownView.setText(String.format(Locale.ENGLISH, "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60));
         String endText = TimeText.time(end);
-        untilView.setText("This alarm cannot be stopped before " + endText);
+        taskView.setText(tasks);
+        countdownText(left >= 3600
+                ? String.format(Locale.ENGLISH, "%d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60)
+                : String.format(Locale.ENGLISH, "%02d:%02d", left / 60, left % 60));
+        leftLabel.setText("left to ring");
+        ring.setProgress(end > start ? (float) (end - now) / (end - start) : 0f);
+        lockPill.setText("Locked until " + endText);
+        Ui.tintStart(lockPill, R.drawable.ic_lock, R.color.accent);
+        untilView.setText("\"" + active.get(0).task + "\" is spoken every 20 seconds. Volume stays at max.");
         stopButton.setEnabled(false);
-        stopButton.setText("Stop (available after " + endText + ")");
+        stopButton.setText("Stop (available at " + endText + ")");
+    }
+
+    private void countdownText(String text) {
+        countdownView.setText(text);
     }
 }

@@ -2,240 +2,399 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="What do you need to do?"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/taskInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="e.g. Study the Spring Security section"
-            android:inputType="textCapSentences|textMultiLine"
-            android:minLines="2" />
-
-        <!-- 1. Repeat -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Repeat"
-            android:textStyle="bold" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/repeatGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:checkedButton="@+id/repeatOnce"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <Button
-                android:id="@+id/repeatOnce"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="Once" />
-
-            <Button
-                android:id="@+id/repeatDaily"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="Daily" />
-
-            <Button
-                android:id="@+id/repeatMonthly"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="Monthly" />
-
-            <Button
-                android:id="@+id/repeatYearly"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="Yearly" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <!-- 2a. Once: date -->
-        <LinearLayout
-            android:id="@+id/dateRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Date"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/dateButton"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <!-- 2b. Yearly: month -->
-        <LinearLayout
-            android:id="@+id/monthRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Month"
-                android:textStyle="bold" />
-
-            <Spinner
-                android:id="@+id/monthSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="48dp" />
-        </LinearLayout>
-
-        <!-- 2c. Monthly / Yearly: day of the month -->
-        <LinearLayout
-            android:id="@+id/dayRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Day of the month"
-                android:textStyle="bold" />
-
-            <Spinner
-                android:id="@+id/daySpinner"
-                android:layout_width="match_parent"
-                android:layout_height="48dp" />
-        </LinearLayout>
-
-        <!-- 3. Time -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Start time"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/startButton"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Ring until (end time)"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/endButton"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Or enter how long it should ring"
-            android:textStyle="bold" />
-
+        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <EditText
-                android:id="@+id/minutesInput"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:hint="0"
-                android:inputType="number"
-                android:maxLength="4"
-                android:selectAllOnFocus="true" />
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_square_button"
+                android:clickable="true"
+                android:contentDescription="Back"
+                android:focusable="true"
+                android:padding="11dp"
+                android:src="@drawable/ic_back"
+                app:tint="@color/text" />
 
             <TextView
+                android:id="@+id/screenTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:layout_marginEnd="16dp"
-                android:text="min" />
-
-            <EditText
-                android:id="@+id/secondsInput"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:hint="0"
-                android:inputType="number"
-                android:maxLength="2"
-                android:selectAllOnFocus="true" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="sec" />
+                android:layout_marginStart="12dp"
+                android:text="New alarm"
+                android:textColor="@color/text"
+                android:textSize="22sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Task -->
         <TextView
-            android:id="@+id/previewText"
+            style="@style/Label"
+            android:layout_marginTop="22dp"
+            android:text="What do you need to do?" />
+
+        <EditText
+            android:id="@+id/taskInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/banner_bg"
-            android:padding="12dp"
-            android:textColor="@color/banner_text" />
+            android:background="@drawable/bg_input"
+            android:gravity="top|start"
+            android:hint="e.g. Study the Spring Security section"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences|textMultiLine"
+            android:minLines="2"
+            android:padding="14dp"
+            android:textColor="@color/text"
+            android:textColorHint="@color/faint"
+            android:textSize="15sp" />
 
-        <Button
+        <!-- Repeat -->
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="18dp"
+            android:text="Repeat" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_segment"
+            android:orientation="horizontal"
+            android:padding="4dp">
+
+            <TextView
+                android:id="@+id/repeatOnce"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="Once"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/repeatDaily"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="Daily"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/repeatMonthly"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="Monthly"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/repeatYearly"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="Yearly"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Once: date -->
+        <LinearLayout
+            android:id="@+id/dateRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/Label"
+                android:text="Date" />
+
+            <TextView
+                android:id="@+id/dateButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_input"
+                android:clickable="true"
+                android:drawablePadding="12dp"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/text"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Monthly: day / Yearly: month + day -->
+        <LinearLayout
+            android:id="@+id/spinnerRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/monthRow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Label"
+                    android:text="Month" />
+
+                <Spinner
+                    android:id="@+id/monthSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_input"
+                    android:paddingStart="6dp"
+                    android:popupBackground="@color/surface" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/dayRow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/dayLabel"
+                    style="@style/Label"
+                    android:text="Day of the month" />
+
+                <Spinner
+                    android:id="@+id/daySpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_input"
+                    android:paddingStart="6dp"
+                    android:popupBackground="@color/surface" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Start / end -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/startCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Starts"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/startText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/text"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/endCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rings until"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/endText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/text"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Duration -->
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="18dp"
+            android:text="Or set how long it rings" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <EditText
+                    android:id="@+id/minutesInput"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="5"
+                    android:textColor="@color/text"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="min"
+                    android:textColor="@color/muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <EditText
+                    android:id="@+id/secondsInput"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="5"
+                    android:textColor="@color/text"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="sec"
+                    android:textColor="@color/muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Preview -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_hero"
+            android:orientation="horizontal"
+            android:padding="14dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginTop="1dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_lock"
+                app:tint="@color/accent" />
+
+            <TextView
+                android:id="@+id/previewText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:lineSpacingExtra="3dp"
+                android:textColor="#CDE7E3"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="20dp" />
+
+        <TextView
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:minHeight="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_button_accent"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
             android:text="Set alarm"
+            android:textColor="@color/on_accent"
             android:textSize="16sp" />
     </LinearLayout>
 </ScrollView>

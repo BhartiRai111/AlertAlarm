@@ -9,15 +9,12 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -35,6 +32,11 @@ import java.util.Locale;
  */
 public class AddReminderActivity extends AppCompatActivity {
 
+    /** Edit an existing alarm (its id). */
+    static final String EXTRA_ID = "id";
+    /** New alarm on this day (start of day, from the calendar). */
+    static final String EXTRA_DATE = "date";
+
     /** Testing mode: a start time in the current minute is allowed and rings right away. */
     private static final long START_GRACE_MS = 60_000L;
 
@@ -47,14 +49,18 @@ public class AddReminderActivity extends AppCompatActivity {
     private int month;
     private long durationMs = 30 * 60_000L;
     private boolean updatingFields = false;
+    private long editId = 0;
 
     private EditText taskInput;
     private EditText minutesInput;
     private EditText secondsInput;
-    private Button dateButton;
-    private Button startButton;
-    private Button endButton;
+    private TextView dateButton;
+    private TextView startButton;
+    private TextView endButton;
+    private TextView dayLabel;
+    private TextView[] repeatButtons;
     private View dateRow;
+    private View spinnerRow;
     private View monthRow;
     private View dayRow;
     private Spinner monthSpinner;
@@ -65,14 +71,18 @@ public class AddReminderActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_reminder);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
+        findViewById(R.id.backButton).setOnClickListener(v -> finish());
 
         // Defaults: start in 5 minutes, ring for 30 minutes
         start.add(Calendar.MINUTE, 5);
         start.set(Calendar.SECOND, 0);
         start.set(Calendar.MILLISECOND, 0);
+        long pickedDay = getIntent().getLongExtra(EXTRA_DATE, 0);
+        if (pickedDay > 0) {
+            Calendar day = Calendar.getInstance();
+            day.setTimeInMillis(pickedDay);
+            start.set(day.get(Calendar.YEAR), day.get(Calendar.MONTH), day.get(Calendar.DAY_OF_MONTH));
+        }
         dayOfMonth = start.get(Calendar.DAY_OF_MONTH);
         month = start.get(Calendar.MONTH);
 
@@ -80,25 +90,33 @@ public class AddReminderActivity extends AppCompatActivity {
         minutesInput = findViewById(R.id.minutesInput);
         secondsInput = findViewById(R.id.secondsInput);
         dateButton = findViewById(R.id.dateButton);
-        startButton = findViewById(R.id.startButton);
-        endButton = findViewById(R.id.endButton);
+        startButton = findViewById(R.id.startText);
+        endButton = findViewById(R.id.endText);
+        dayLabel = findViewById(R.id.dayLabel);
         dateRow = findViewById(R.id.dateRow);
+        spinnerRow = findViewById(R.id.spinnerRow);
         monthRow = findViewById(R.id.monthRow);
         dayRow = findViewById(R.id.dayRow);
         monthSpinner = findViewById(R.id.monthSpinner);
         daySpinner = findViewById(R.id.daySpinner);
         preview = findViewById(R.id.previewText);
+        Ui.tintStart(dateButton, R.drawable.ic_calendar, R.color.muted);
+
+        editId = getIntent().getLongExtra(EXTRA_ID, 0);
+        if (editId != 0) {
+            loadForEdit(editId);
+        }
 
         setUpRepeatButtons();
         setUpSpinners();
 
         dateButton.setOnClickListener(v -> pickDate());
-        startButton.setOnClickListener(v -> new TimePickerDialog(this, (view, h, m) -> {
+        findViewById(R.id.startCard).setOnClickListener(v -> new TimePickerDialog(this, (view, h, m) -> {
             start.set(Calendar.HOUR_OF_DAY, h);
             start.set(Calendar.MINUTE, m);
             render();
         }, start.get(Calendar.HOUR_OF_DAY), start.get(Calendar.MINUTE), false).show());
-        endButton.setOnClickListener(v -> pickEndTime());
+        findViewById(R.id.endCard).setOnClickListener(v -> pickEndTime());
 
         TextWatcher durationWatcher = new TextWatcher() {
             @Override
@@ -128,36 +146,62 @@ public class AddReminderActivity extends AppCompatActivity {
         render();
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        finish();
-        return true;
+    /** Fill the form from a saved alarm. A finished one-time alarm gets the next possible day. */
+    private void loadForEdit(long id) {
+        Reminder found = null;
+        for (Reminder r : ReminderStore.getAll(this)) {
+            if (r.id == id) {
+                found = r;
+            }
+        }
+        if (found == null) {
+            editId = 0;
+            return;
+        }
+        ((TextView) findViewById(R.id.screenTitle)).setText("Edit alarm");
+        ((TextView) findViewById(R.id.saveButton)).setText("Save changes");
+        taskInput.setText(found.task);
+        repeat = found.repeat;
+        start.setTimeInMillis(found.startMillis);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+        if (found.done) {
+            Calendar today = Calendar.getInstance();
+            start.set(today.get(Calendar.YEAR), today.get(Calendar.MONTH), today.get(Calendar.DAY_OF_MONTH));
+            if (start.getTimeInMillis() < System.currentTimeMillis()) {
+                start.add(Calendar.DAY_OF_MONTH, 1);
+            }
+        }
+        dayOfMonth = found.dayOfMonth;
+        month = found.month;
+        durationMs = found.durationMs > 0 ? found.durationMs : found.endMillis - found.startMillis;
     }
 
     // ------------------------------------------------------------------ repeat + date fields
 
     private void setUpRepeatButtons() {
-        MaterialButtonToggleGroup group = findViewById(R.id.repeatGroup);
-        group.addOnButtonCheckedListener((g, checkedId, isChecked) -> {
-            if (!isChecked) {
-                return;
-            }
-            if (checkedId == R.id.repeatDaily) {
-                repeat = Reminder.Repeat.DAILY;
-            } else if (checkedId == R.id.repeatMonthly) {
-                repeat = Reminder.Repeat.MONTHLY;
-            } else if (checkedId == R.id.repeatYearly) {
-                repeat = Reminder.Repeat.YEARLY;
-            } else {
-                repeat = Reminder.Repeat.ONCE;
-            }
-            showRowsForRepeat();
-            render();
-        });
+        repeatButtons = new TextView[]{
+                findViewById(R.id.repeatOnce), findViewById(R.id.repeatDaily),
+                findViewById(R.id.repeatMonthly), findViewById(R.id.repeatYearly)};
+        Reminder.Repeat[] values = Reminder.Repeat.values();
+        for (int i = 0; i < repeatButtons.length; i++) {
+            Reminder.Repeat value = values[i];
+            repeatButtons[i].setOnClickListener(v -> {
+                repeat = value;
+                showRowsForRepeat();
+                render();
+            });
+        }
     }
 
     private void showRowsForRepeat() {
+        for (int i = 0; i < repeatButtons.length; i++) {
+            Ui.segment(repeatButtons[i], Reminder.Repeat.values()[i] == repeat);
+        }
         dateRow.setVisibility(repeat == Reminder.Repeat.ONCE ? View.VISIBLE : View.GONE);
+        spinnerRow.setVisibility(repeat == Reminder.Repeat.MONTHLY || repeat == Reminder.Repeat.YEARLY
+                ? View.VISIBLE : View.GONE);
+        dayLabel.setText(repeat == Reminder.Repeat.YEARLY ? "Day" : "Day of the month");
         monthRow.setVisibility(repeat == Reminder.Repeat.YEARLY ? View.VISIBLE : View.GONE);
         dayRow.setVisibility(repeat == Reminder.Repeat.MONTHLY || repeat == Reminder.Repeat.YEARLY
                 ? View.VISIBLE : View.GONE);
@@ -249,7 +293,7 @@ public class AddReminderActivity extends AppCompatActivity {
 
     /** Builds the alarm from the form; its start/end are the first time it will ring. */
     private Reminder buildReminder(String task) {
-        Reminder r = new Reminder(System.currentTimeMillis(), task, start.getTimeInMillis(),
+        Reminder r = new Reminder(editId != 0 ? editId : System.currentTimeMillis(), task, start.getTimeInMillis(),
                 start.getTimeInMillis() + Math.max(durationMs, 1));
         r.repeat = repeat;
         r.hour = start.get(Calendar.HOUR_OF_DAY);
@@ -269,8 +313,9 @@ public class AddReminderActivity extends AppCompatActivity {
         long e = r.startMillis + durationMs;
 
         dateButton.setText(dateFormat.format(new Date(start.getTimeInMillis())));
-        startButton.setText(TimeText.time(s));
-        endButton.setText(TimeText.time(e) + (TimeText.sameDay(s, e) ? "" : " (next day)"));
+        startButton.setText(Ui.bigTime(s));
+        endButton.setText(TimeText.sameDay(s, e) ? Ui.bigTime(e)
+                : android.text.TextUtils.concat(Ui.bigTime(e), " +1 day"));
 
         if (durationMs <= 0) {
             preview.setText("Enter how long the alarm should ring.");
@@ -297,8 +342,17 @@ public class AddReminderActivity extends AppCompatActivity {
             return;
         }
 
-        Reminder r = buildReminder(task);
         long now = System.currentTimeMillis();
+        if (editId != 0) {
+            for (Reminder old : ReminderStore.getActive(this, now)) {
+                if (old.id == editId) {
+                    Toast.makeText(this, "This alarm is ringing now. Edit it after "
+                            + TimeText.time(old.endMillis) + ".", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+        }
+        Reminder r = buildReminder(task);
         if (r.startMillis < now - START_GRACE_MS) {
             Toast.makeText(this, "This start time has already passed", Toast.LENGTH_LONG).show();
             return;
@@ -309,6 +363,9 @@ public class AddReminderActivity extends AppCompatActivity {
             r.endMillis = Math.max(r.endMillis, now + 1_000L);
         }
 
+        if (editId != 0) {
+            AlarmScheduler.cancel(this, editId);
+        }
         ReminderStore.save(this, r);
         AlarmScheduler.schedule(this, r);
 

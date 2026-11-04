@@ -1,54 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ring_bg"
-    android:gravity="center"
+    android:background="@drawable/bg_ringing"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:paddingStart="24dp"
+    android:paddingTop="48dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="28dp">
+
+    <TextView
+        android:id="@+id/lockPill"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:background="@drawable/bg_pill_soft"
+        android:drawablePadding="6dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textColor="@color/accent"
+        android:textSize="12sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="⏰ Time for your task!"
-        android:textColor="#FFFFFF"
-        android:textSize="30sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="20dp"
+        android:text="It's time for"
+        android:textColor="@color/hero_text"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/taskText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="24sp" />
-
-    <TextView
-        android:id="@+id/countdownText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:fontFamily="monospace"
-        android:textColor="#FFFFFF"
-        android:textSize="48sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/untilText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp" />
+        android:lineSpacingExtra="2dp"
+        android:textColor="@color/text"
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/stopButton"
+    <FrameLayout
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="26dp">
+
+        <com.bharti.alertalarm.RingProgressView
+            android:id="@+id/ringView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/countdownText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="-0.02"
+                android:textColor="@color/text"
+                android:textSize="42sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/leftLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="left to ring"
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:enabled="false"
-        android:minHeight="56dp"
-        android:text="Stop" />
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_input"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_volume"
+            app:tint="@color/accent" />
+
+        <TextView
+            android:id="@+id/untilText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:textColor="@color/soft_text"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/stopButton"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:background="@drawable/bg_stop_button"
+        android:clickable="true"
+        android:drawablePadding="8dp"
+        android:focusable="true"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:textColor="@color/stop_text"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/footerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Back button is blocked while it rings."
+        android:textColor="@color/faint"
+        android:textSize="12sp" />
 </LinearLayout>

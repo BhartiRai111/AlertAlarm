@@ -1,10 +1,25 @@
 <resources>
-    <color name="brand">#4F46E5</color>
-    <color name="card">#F3F4F6</color>
-    <color name="card_stroke">#E5E7EB</color>
-    <color name="text_dark">#111827</color>
-    <color name="text_muted">#6B7280</color>
-    <color name="banner_bg">#FEF3C7</color>
-    <color name="banner_text">#92400E</color>
-    <color name="ring_bg">#B91C1C</color>
+    <color name="bg">#0E1113</color>
+    <color name="surface">#171B1F</color>
+    <color name="stroke">#2A3036</color>
+    <color name="text">#E8EDF0</color>
+    <color name="muted">#8A949C</color>
+    <color name="faint">#6E7880</color>
+    <color name="soft_text">#C5CDD3</color>
+    <color name="accent">#2DD4BF</color>
+    <color name="on_accent">#062A26</color>
+    <color name="hero">#13322F</color>
+    <color name="hero_stroke">#1F5A53</color>
+    <color name="hero_text">#A9C9C4</color>
+    <color name="nav">#121619</color>
+    <color name="nav_stroke">#22282D</color>
+    <color name="done_bg">#1F2429</color>
+    <color name="danger">#F87171</color>
+    <color name="danger_stroke">#5A2A2E</color>
+    <color name="banner_bg">#2A2414</color>
+    <color name="banner_stroke">#4A3B16</color>
+    <color name="banner_text">#FCD34D</color>
+    <color name="ring_track">#1F2A2D</color>
+    <color name="launcher_bg">#13322F</color>
+    <color name="accent_soft">#242DD4BF</color>
 </resources>
