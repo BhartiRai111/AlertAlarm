@@ -140,7 +140,7 @@ public class RingingActivity extends AppCompatActivity {
         if (active.isEmpty()) {
             lockedUntil = 0;
             lockPill.setText("Unlocked");
-            Ui.tintStart(lockPill, R.drawable.ic_check, R.color.accent);
+            Ui.tintStart(lockPill, R.drawable.ic_check, R.color.white);
             countdownText("Done");
             leftLabel.setText("time's up");
             ring.setProgress(0f);
@@ -177,7 +177,7 @@ public class RingingActivity extends AppCompatActivity {
         leftLabel.setText("left to ring");
         ring.setProgress(end > start ? (float) (end - now) / (end - start) : 0f);
         lockPill.setText("Locked until " + endText);
-        Ui.tintStart(lockPill, R.drawable.ic_lock, R.color.accent);
+        Ui.tintStart(lockPill, R.drawable.ic_lock, R.color.white);
         untilView.setText("\"" + active.get(0).task + "\" is spoken every 20 seconds. Volume stays at max.");
         stopButton.setEnabled(false);
         stopButton.setText("Stop (available at " + endText + ")");

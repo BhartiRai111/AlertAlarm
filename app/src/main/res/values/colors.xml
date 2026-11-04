@@ -22,4 +22,5 @@
     <color name="ring_track">#1F2A2D</color>
     <color name="launcher_bg">#13322F</color>
     <color name="accent_soft">#242DD4BF</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

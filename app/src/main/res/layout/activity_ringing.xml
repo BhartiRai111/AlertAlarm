@@ -94,7 +94,7 @@
             android:layout_height="18dp"
             android:importantForAccessibility="no"
             android:src="@drawable/ic_volume"
-            app:tint="@color/accent" />
+            app:tint="@color/white" />
 
         <TextView
             android:id="@+id/untilText"
