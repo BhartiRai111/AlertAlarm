@@ -12,8 +12,6 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -21,7 +19,6 @@ import java.util.Locale;
 public class RingingActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
     private TextView taskView;
     private TextView countdownView;
@@ -64,7 +61,7 @@ public class RingingActivity extends AppCompatActivity {
                     finish();
                 } else {
                     Toast.makeText(RingingActivity.this,
-                            "Yeh alarm " + timeFormat.format(new Date(lockedUntil)) + " se pehle band nahi hoga",
+                            "This alarm cannot be stopped before " + TimeText.time(lockedUntil),
                             Toast.LENGTH_SHORT).show();
                 }
             }
@@ -89,10 +86,10 @@ public class RingingActivity extends AppCompatActivity {
 
         if (active.isEmpty()) {
             lockedUntil = 0;
-            countdownView.setText("Time poora ✓");
-            untilView.setText("Alarm band ho gaya hai.");
+            countdownView.setText("Time's up ✓");
+            untilView.setText("The alarm has stopped.");
             stopButton.setEnabled(true);
-            stopButton.setText("Theek hai");
+            stopButton.setText("OK");
             return;
         }
 
@@ -112,9 +109,9 @@ public class RingingActivity extends AppCompatActivity {
         long left = Math.max(0, end - now) / 1000;
         taskView.setText(tasks);
         countdownView.setText(String.format(Locale.ENGLISH, "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60));
-        String endText = timeFormat.format(new Date(end));
-        untilView.setText("Yeh alarm " + endText + " tak band nahi hoga");
+        String endText = TimeText.time(end);
+        untilView.setText("This alarm cannot be stopped before " + endText);
         stopButton.setEnabled(false);
-        stopButton.setText("Band karo (" + endText + " ke baad)");
+        stopButton.setText("Stop (available after " + endText + ")");
     }
 }

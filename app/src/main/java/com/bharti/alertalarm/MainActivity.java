@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
 
     private final List<Reminder> items = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH);
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
     private ReminderAdapter adapter;
     private View banner;
@@ -94,19 +93,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void confirmDelete(Reminder r) {
         if (r.isActive(System.currentTimeMillis())) {
-            Toast.makeText(this, "Yeh alarm abhi baj raha hai. "
-                    + timeFormat.format(new Date(r.endMillis)) + " se pehle delete nahi hoga.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "This alarm is ringing now. It cannot be deleted before "
+                    + TimeText.time(r.endMillis) + ".", Toast.LENGTH_LONG).show();
             return;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Delete karna hai?")
+                .setTitle("Delete this task?")
                 .setMessage(r.task)
                 .setPositiveButton("Delete", (d, w) -> {
                     AlarmScheduler.cancel(this, r.id);
                     ReminderStore.delete(this, r.id);
                     refresh();
                 })
-                .setNegativeButton("Nahi", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -118,19 +117,19 @@ public class MainActivity extends AppCompatActivity {
         Intent action = null;
 
         if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
-            text = "Notifications band hain. Alarm dikhane ke liye inhe on karo.";
+            text = "Notifications are off. Turn them on so the alarm can show.";
             action = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                     .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && !getSystemService(AlarmManager.class).canScheduleExactAlarms()) {
-            text = "\"Alarms & reminders\" permission do, warna alarm time par nahi bajega.";
+            text = "Allow \"Alarms & reminders\", otherwise the alarm may not ring on time.";
             action = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse(pkg));
         } else if (Build.VERSION.SDK_INT >= 34
                 && !getSystemService(NotificationManager.class).canUseFullScreenIntent()) {
-            text = "Full-screen alarm permission do, taaki lock screen par alarm khule.";
+            text = "Allow full-screen alarms so the alarm opens on the lock screen.";
             action = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse(pkg));
         } else if (!getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName())) {
-            text = "Battery optimization band karo, taaki phone alarm ko beech mein na roke.";
+            text = "Turn off battery optimization so the phone does not stop the alarm.";
             action = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse(pkg));
         }
 
@@ -181,15 +180,15 @@ public class MainActivity extends AppCompatActivity {
 
             task.setText(r.task);
             time.setText(dateFormat.format(new Date(r.startMillis)) + "  •  "
-                    + timeFormat.format(new Date(r.startMillis)) + " – "
-                    + timeFormat.format(new Date(r.endMillis)));
+                    + TimeText.time(r.startMillis) + " – "
+                    + TimeText.time(r.endMillis));
 
             long now = System.currentTimeMillis();
             if (r.done) {
-                status.setText("✓ Ho gaya");
+                status.setText("✓ Done");
                 status.setTextColor(Color.parseColor("#6B7280"));
             } else if (r.isActive(now)) {
-                status.setText("🔔 Baj raha hai (locked)");
+                status.setText("🔔 Ringing (locked)");
                 status.setTextColor(Color.parseColor("#B91C1C"));
             } else {
                 status.setText("⏰ Upcoming");

@@ -34,7 +34,7 @@ import java.util.Locale;
 /**
  * Rings from start time until end time and cannot be stopped from the UI in between.
  * - Plays the phone's alarm tone on loop (alarm volume, forced to max every few seconds)
- * - Speaks the task out loud every 20 seconds (Hindi voice if installed, else English)
+ * - Speaks the task out loud every 20 seconds (in English)
  * - Vibrates
  * - Stops itself only when the end time is reached
  */
@@ -62,7 +62,6 @@ public class AlarmService extends Service {
 
     private volatile boolean ttsReady = false;
     private volatile boolean speaking = false;
-    private boolean useHindi = false;
     private boolean started = false;
     private boolean finished = false;
     private long lastSpokenAt = 0;
@@ -194,9 +193,9 @@ public class AlarmService extends Service {
                 return;
             }
             tts.setAudioAttributes(alarmAttributes);
-            int result = tts.setLanguage(new Locale("hi", "IN"));
-            useHindi = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED;
-            if (!useHindi) {
+            // Indian English voice if installed, otherwise the default English voice
+            int result = tts.setLanguage(new Locale("en", "IN"));
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 tts.setLanguage(Locale.ENGLISH);
             }
             tts.setSpeechRate(0.9f);
@@ -220,16 +219,14 @@ public class AlarmService extends Service {
     }
 
     private void speak(String tasks) {
-        String message = useHindi
-                ? "ध्यान दीजिए। आपको यह काम करना है: " + tasks
-                : "Attention please. It is time to do: " + tasks;
+        String message = "Attention please. It is time for your task: " + tasks;
         speaking = true;
         if (player != null && player.isPlaying()) {
             player.pause();   // tone pauses so the voice is clear; tick() resumes it
         }
         Bundle params = new Bundle();
         params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_ALARM);
-        if (tts.speak(message, TextToSpeech.QUEUE_FLUSH, params, "kaam") != TextToSpeech.SUCCESS) {
+        if (tts.speak(message, TextToSpeech.QUEUE_FLUSH, params, "task") != TextToSpeech.SUCCESS) {
             speaking = false;
         }
     }
@@ -268,7 +265,7 @@ public class AlarmService extends Service {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         return new NotificationCompat.Builder(this, Notifications.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_alarm)
-                .setContentTitle("⏰ Kaam ka time!")
+                .setContentTitle("⏰ Time for your task!")
                 .setContentText(title)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -293,7 +290,7 @@ public class AlarmService extends Service {
 
     private static String notificationTitle(List<Reminder> active) {
         String first = active.get(0).task;
-        return active.size() > 1 ? first + " (+" + (active.size() - 1) + " aur)" : first;
+        return active.size() > 1 ? first + " (+" + (active.size() - 1) + " more)" : first;
     }
 
     // ------------------------------------------------------------------ stopping

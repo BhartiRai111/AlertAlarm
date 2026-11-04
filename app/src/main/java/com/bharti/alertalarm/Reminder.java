@@ -3,7 +3,7 @@ package com.bharti.alertalarm;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** One task: "date 1 ko 11 AM se 11:30 AM tak yeh kaam yaad dilao". */
+/** One task, e.g. "On the 1st, from 11:00 AM to 11:30 AM: study Spring Security". */
 public class Reminder {
 
     /** Alarm may fire a moment before the exact start; treat it as started. */

@@ -3,12 +3,13 @@
 Ek Android alarm app jo **scheduled time par kaam bolkar yaad dilata hai** aur **end time tak band nahi hota**.
 
 Example: "1 tarikh, 11:00 AM se 11:30 AM: Spring Security section padhna"
-→ 11:00 baje alarm bajega, har 20 second mein bolega *"Dhyan dijiye. Aapko yeh kaam karna hai: Spring Security section padhna"*, aur 11:30 tak koi band nahi kar payega.
+→ 11:00 baje alarm bajega, har 20 second mein bolega *"Attention please. It is time for your task: Study the Spring Security section"*, aur 11:30 tak koi band nahi kar payega.
 
 ## Features
-- Kaam, date, start time aur **end time** set karo (end time agle din bhi ho sakta hai, max 12 ghante)
+- Kaam, date, start time, aur **end time chuno ya minutes/seconds likho** (dono sync rehte hain; max 12 ghante)
+- Poora app English mein
 - Start time par **full-screen alarm**, lock screen par bhi
-- Alarm tone loop mein bajti hai, beech-beech mein **kaam bolkar batata hai** (Hindi voice ho toh Hindi, warna English)
+- Alarm tone loop mein bajti hai, beech-beech mein **kaam English mein bolkar batata hai**
 - **Lock:** end time se pehle
   - "Band karo" button disabled rehta hai
   - Back button kaam nahi karta
@@ -38,7 +39,6 @@ App upar ek peela banner dikhayega. Ek-ek karke saari permissions do:
 
 Yeh nahi kiya toh yeh phones apne aap alarm ko rok dete hain.
 
-**Hindi voice ke liye:** Settings → Text-to-speech → Google → Install voice data → **Hindi (India)** download karo.
 
 ## Pehla test
 1. Ek kaam add karo jo **2 minute baad** shuru ho aur **3 minute** tak baje.

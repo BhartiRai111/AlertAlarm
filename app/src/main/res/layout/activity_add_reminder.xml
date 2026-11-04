@@ -12,14 +12,14 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Kya kaam karna hai?"
+            android:text="What do you need to do?"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/taskInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Jaise: Spring Security section padhna"
+            android:hint="e.g. Study the Spring Security section"
             android:inputType="textCapSentences|textMultiLine"
             android:minLines="2" />
 
@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Kab bajna shuru ho? (start time)"
+            android:text="Start time"
             android:textStyle="bold" />
 
         <Button
@@ -53,7 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Kab tak bajta rahe? (is time se pehle band nahi hoga)"
+            android:text="Ring until (end time)"
             android:textStyle="bold" />
 
         <Button
@@ -61,6 +61,55 @@
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Or enter how long it should ring"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/minutesInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:selectAllOnFocus="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="16dp"
+                android:text="min" />
+
+            <EditText
+                android:id="@+id/secondsInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="2"
+                android:selectAllOnFocus="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="sec" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/previewText"
@@ -77,7 +126,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:minHeight="56dp"
-            android:text="Alarm set karo"
+            android:text="Set alarm"
             android:textSize="16sp" />
     </LinearLayout>
 </ScrollView>

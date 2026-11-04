@@ -3,6 +3,8 @@ package com.bharti.alertalarm;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -15,20 +17,28 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-/** Add a task: what, which date, start time, and until when it must keep ringing. */
+/**
+ * Add a task: what, which date, start time, and how long it must keep ringing.
+ * The length can be set either by picking an end time OR by typing minutes/seconds;
+ * both stay in sync.
+ */
 public class AddReminderActivity extends AppCompatActivity {
 
+    private static final long MIN_DURATION_MS = 10_000L;
     private static final long MAX_DURATION_MS = 12 * 60 * 60 * 1000L;
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH);
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
     /** Holds the date AND the start time. */
     private final Calendar start = Calendar.getInstance();
-    private int endHour;
-    private int endMinute;
+    /** How long the alarm rings. The end time is always start + duration. */
+    private long durationMs = 30 * 60_000L;
+    /** True while the code itself writes into the minute/second boxes (so the watcher ignores it). */
+    private boolean updatingFields = false;
 
     private EditText taskInput;
+    private EditText minutesInput;
+    private EditText secondsInput;
     private Button dateButton;
     private Button startButton;
     private Button endButton;
@@ -46,12 +56,10 @@ public class AddReminderActivity extends AppCompatActivity {
         start.add(Calendar.MINUTE, 5);
         start.set(Calendar.SECOND, 0);
         start.set(Calendar.MILLISECOND, 0);
-        Calendar defaultEnd = (Calendar) start.clone();
-        defaultEnd.add(Calendar.MINUTE, 30);
-        endHour = defaultEnd.get(Calendar.HOUR_OF_DAY);
-        endMinute = defaultEnd.get(Calendar.MINUTE);
 
         taskInput = findViewById(R.id.taskInput);
+        minutesInput = findViewById(R.id.minutesInput);
+        secondsInput = findViewById(R.id.secondsInput);
         dateButton = findViewById(R.id.dateButton);
         startButton = findViewById(R.id.startButton);
         endButton = findViewById(R.id.endButton);
@@ -61,15 +69,34 @@ public class AddReminderActivity extends AppCompatActivity {
         startButton.setOnClickListener(v -> new TimePickerDialog(this, (view, h, m) -> {
             start.set(Calendar.HOUR_OF_DAY, h);
             start.set(Calendar.MINUTE, m);
-            render();
+            render();   // duration stays the same, so the end time moves with the start
         }, start.get(Calendar.HOUR_OF_DAY), start.get(Calendar.MINUTE), false).show());
-        endButton.setOnClickListener(v -> new TimePickerDialog(this, (view, h, m) -> {
-            endHour = h;
-            endMinute = m;
-            render();
-        }, endHour, endMinute, false).show());
+        endButton.setOnClickListener(v -> pickEndTime());
+
+        TextWatcher durationWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (updatingFields) {
+                    return;
+                }
+                durationMs = readDurationFromFields();
+                render();
+            }
+        };
+        minutesInput.addTextChangedListener(durationWatcher);
+        secondsInput.addTextChangedListener(durationWatcher);
+
         findViewById(R.id.saveButton).setOnClickListener(v -> save());
 
+        writeDurationToFields();
         render();
     }
 
@@ -90,33 +117,65 @@ public class AddReminderActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /** End is on the same date; if the end time is earlier than the start time, it means the next day. */
-    private long endMillis() {
-        Calendar end = (Calendar) start.clone();
-        end.set(Calendar.HOUR_OF_DAY, endHour);
-        end.set(Calendar.MINUTE, endMinute);
-        if (end.getTimeInMillis() <= start.getTimeInMillis()) {
-            end.add(Calendar.DAY_OF_MONTH, 1);
+    /** Picking an end time updates the minute/second boxes. An earlier time than the start means the next day. */
+    private void pickEndTime() {
+        Calendar currentEnd = Calendar.getInstance();
+        currentEnd.setTimeInMillis(endMillis());
+        new TimePickerDialog(this, (view, h, m) -> {
+            Calendar end = (Calendar) start.clone();
+            end.set(Calendar.HOUR_OF_DAY, h);
+            end.set(Calendar.MINUTE, m);
+            end.set(Calendar.SECOND, 0);
+            if (end.getTimeInMillis() <= start.getTimeInMillis()) {
+                end.add(Calendar.DAY_OF_MONTH, 1);
+            }
+            durationMs = end.getTimeInMillis() - start.getTimeInMillis();
+            writeDurationToFields();
+            render();
+        }, currentEnd.get(Calendar.HOUR_OF_DAY), currentEnd.get(Calendar.MINUTE), false).show();
+    }
+
+    private long readDurationFromFields() {
+        long minutes = parse(minutesInput.getText().toString());
+        long seconds = parse(secondsInput.getText().toString());
+        return (minutes * 60 + seconds) * 1000L;
+    }
+
+    private void writeDurationToFields() {
+        updatingFields = true;
+        long totalSeconds = durationMs / 1000;
+        minutesInput.setText(String.valueOf(totalSeconds / 60));
+        secondsInput.setText(String.valueOf(totalSeconds % 60));
+        updatingFields = false;
+    }
+
+    private static long parse(String text) {
+        try {
+            return text.trim().isEmpty() ? 0 : Long.parseLong(text.trim());
+        } catch (NumberFormatException e) {
+            return 0;
         }
-        return end.getTimeInMillis();
+    }
+
+    private long endMillis() {
+        return start.getTimeInMillis() + durationMs;
     }
 
     private void render() {
         long s = start.getTimeInMillis();
         long e = endMillis();
-        boolean nextDay = !sameDay(s, e);
 
         dateButton.setText(dateFormat.format(new Date(s)));
-        startButton.setText(timeFormat.format(new Date(s)));
-        endButton.setText(timeFormat.format(new Date(e)) + (nextDay ? " (agle din)" : ""));
+        startButton.setText(TimeText.time(s));
+        endButton.setText(TimeText.time(e) + (TimeText.sameDay(s, e) ? "" : " (next day)"));
 
-        long minutes = (e - s) / 60_000;
-        String duration = minutes >= 60
-                ? (minutes / 60) + " ghanta " + (minutes % 60) + " min"
-                : minutes + " min";
-        preview.setText("Alarm " + timeFormat.format(new Date(s)) + " par bajega aur "
-                + timeFormat.format(new Date(e)) + " tak (" + duration + ") bajta rahega.\n"
-                + "Is beech koi bhi ise band nahi kar payega.");
+        if (durationMs <= 0) {
+            preview.setText("Enter how long the alarm should ring.");
+            return;
+        }
+        preview.setText("The alarm will start at " + TimeText.time(s) + " and keep ringing until "
+                + TimeText.time(e) + " (" + TimeText.duration(durationMs) + ").\n"
+                + "Nobody can stop it before that.");
     }
 
     private void save() {
@@ -125,15 +184,19 @@ public class AddReminderActivity extends AppCompatActivity {
         long e = endMillis();
 
         if (task.isEmpty()) {
-            taskInput.setError("Kaam likho");
+            taskInput.setError("Please enter a task");
             return;
         }
         if (s <= System.currentTimeMillis()) {
-            Toast.makeText(this, "Start time aage ka hona chahiye", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Start time must be in the future", Toast.LENGTH_LONG).show();
             return;
         }
-        if (e - s > MAX_DURATION_MS) {
-            Toast.makeText(this, "Alarm 12 ghante se zyada nahi baj sakta", Toast.LENGTH_LONG).show();
+        if (durationMs < MIN_DURATION_MS) {
+            Toast.makeText(this, "The alarm must ring for at least 10 seconds", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (durationMs > MAX_DURATION_MS) {
+            Toast.makeText(this, "The alarm cannot ring for more than 12 hours", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -141,17 +204,8 @@ public class AddReminderActivity extends AppCompatActivity {
         ReminderStore.save(this, reminder);
         AlarmScheduler.schedule(this, reminder);
 
-        Toast.makeText(this, "Alarm set: " + dateFormat.format(new Date(s)) + ", "
-                + timeFormat.format(new Date(s)), Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Alarm set for " + dateFormat.format(new Date(s)) + ", "
+                + TimeText.time(s), Toast.LENGTH_LONG).show();
         finish();
-    }
-
-    private static boolean sameDay(long a, long b) {
-        Calendar ca = Calendar.getInstance();
-        ca.setTimeInMillis(a);
-        Calendar cb = Calendar.getInstance();
-        cb.setTimeInMillis(b);
-        return ca.get(Calendar.YEAR) == cb.get(Calendar.YEAR)
-                && ca.get(Calendar.DAY_OF_YEAR) == cb.get(Calendar.DAY_OF_YEAR);
     }
 }

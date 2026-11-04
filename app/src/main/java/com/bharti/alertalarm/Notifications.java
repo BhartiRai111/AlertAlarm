@@ -14,12 +14,9 @@ final class Notifications {
 
     static void ensureChannel(Context c) {
         NotificationManager nm = c.getSystemService(NotificationManager.class);
-        if (nm.getNotificationChannel(CHANNEL_ID) != null) {
-            return;
-        }
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Kaam alarms",
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Task alarms",
                 NotificationManager.IMPORTANCE_HIGH);
-        channel.setDescription("Kaam ka time hone par alarm");
+        channel.setDescription("Rings when it is time for a task");
         channel.setSound(null, null);          // the service plays the alarm sound itself
         channel.enableVibration(false);         // the service vibrates itself
         channel.setBypassDnd(true);

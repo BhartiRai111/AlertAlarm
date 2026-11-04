@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Permission do" />
+            android:text="Grant permission" />
     </LinearLayout>
 
     <ListView
@@ -44,7 +44,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="Abhi koi kaam set nahi hai.\nNeeche button se naya kaam add karo."
+        android:text="No tasks yet.\nTap the button below to add one."
         android:textSize="16sp" />
 
     <Button
@@ -53,6 +53,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:minHeight="56dp"
-        android:text="+ Naya kaam add karo"
+        android:text="+ Add task"
         android:textSize="16sp" />
 </LinearLayout>
