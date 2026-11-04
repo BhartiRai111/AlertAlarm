@@ -4,8 +4,6 @@
     <!-- Notification + full-screen alarm screen -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <!-- Lets the alarm screen open over other apps while the phone is unlocked and in use -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Exact alarms: USE_EXACT_ALARM is auto-granted to alarm apps on Android 13+,
          SCHEDULE_EXACT_ALARM covers Android 12 -->
