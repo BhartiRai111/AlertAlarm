@@ -95,21 +95,37 @@ final class ReminderStore {
         return active;
     }
 
-    /** Marks reminders whose end time has passed as done, and returns the ones that must ring now. */
+    /**
+     * When an alarm's end time has passed: a one-time alarm becomes done, a repeating alarm moves to
+     * its next occurrence (and is scheduled again). Returns the alarms that must ring now.
+     */
     static synchronized List<Reminder> markExpiredAndGetActive(Context c, long now) {
         List<Reminder> all = getAll(c);
         List<Reminder> active = new ArrayList<>();
+        List<Reminder> toSchedule = new ArrayList<>();
         boolean changed = false;
         for (Reminder r : all) {
             if (!r.done && now >= r.endMillis) {
-                r.done = true;
                 changed = true;
-            } else if (r.isActive(now)) {
+                if (r.isRepeating()) {
+                    r.advance(now);
+                    if (r.enabled) {
+                        toSchedule.add(r);
+                    }
+                } else {
+                    r.done = true;
+                    continue;
+                }
+            }
+            if (r.isActive(now)) {
                 active.add(r);
             }
         }
         if (changed) {
             saveAll(c, all);
+        }
+        for (Reminder r : toSchedule) {
+            AlarmScheduler.schedule(c, r);
         }
         return active;
     }

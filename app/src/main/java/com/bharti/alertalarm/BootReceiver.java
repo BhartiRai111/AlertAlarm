@@ -6,20 +6,16 @@ import android.content.Intent;
 
 /**
  * Android deletes all alarms when the phone restarts. This puts them back.
- * If a reminder is in its ringing window right now, the alarm fires in 1 second and ringing restarts.
+ * Repeating alarms whose time passed while the phone was off move to their next occurrence.
+ * If an alarm is in its ringing window right now, it fires in 1 second and ringing restarts.
  */
 public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        long now = System.currentTimeMillis();
+        ReminderStore.markExpiredAndGetActive(context, System.currentTimeMillis());
         for (Reminder r : ReminderStore.getAll(context)) {
-            if (r.done || !r.enabled) {
-                continue;
-            }
-            if (r.endMillis <= now) {
-                ReminderStore.markDone(context, r.id);
-            } else {
+            if (!r.done && r.enabled) {
                 AlarmScheduler.schedule(context, r);
             }
         }

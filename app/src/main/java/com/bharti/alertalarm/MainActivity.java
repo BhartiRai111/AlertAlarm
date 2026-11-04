@@ -270,10 +270,11 @@ public class MainActivity extends AppCompatActivity {
                 status.setText("🔔 Ringing · locked until " + TimeText.time(r.endMillis));
                 status.setTextColor(COLOR_RED);
             } else if (!r.enabled) {
-                status.setText("Off  ·  " + TimeText.dayLabel(r.startMillis));
+                status.setText("Off  ·  " + (r.isRepeating() ? r.repeatLabel() : TimeText.dayLabel(r.startMillis)));
                 status.setTextColor(COLOR_MUTED);
             } else {
-                status.setText(TimeText.dayLabel(r.startMillis) + "  ·  in " + TimeText.until(r.startMillis));
+                status.setText((r.isRepeating() ? "🔁 " + r.repeatLabel() + "\nNext: " : "")
+                        + TimeText.dayLabel(r.startMillis) + "  ·  in " + TimeText.until(r.startMillis));
                 status.setTextColor(COLOR_BRAND);
             }
 
