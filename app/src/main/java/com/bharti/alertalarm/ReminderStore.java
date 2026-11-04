@@ -75,6 +75,16 @@ final class ReminderStore {
         saveAll(c, list);
     }
 
+    static synchronized void setEnabled(Context c, long id, boolean enabled) {
+        List<Reminder> list = getAll(c);
+        for (Reminder r : list) {
+            if (r.id == id) {
+                r.enabled = enabled;
+            }
+        }
+        saveAll(c, list);
+    }
+
     static synchronized List<Reminder> getActive(Context c, long now) {
         List<Reminder> active = new ArrayList<>();
         for (Reminder r : getAll(c)) {

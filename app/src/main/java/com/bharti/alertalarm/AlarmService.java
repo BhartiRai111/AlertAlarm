@@ -45,7 +45,7 @@ public class AlarmService extends Service {
     private static final long TICK_MS = 1_000L;
     private static final long SPEAK_EVERY_MS = 20_000L;
     private static final long VOLUME_EVERY_MS = 5_000L;
-    private static final long MAX_WAKE_LOCK_MS = 12 * 60 * 60 * 1000L;
+    private static final long MAX_WAKE_LOCK_MS = 48 * 60 * 60 * 1000L;
 
     private static volatile boolean running = false;
 

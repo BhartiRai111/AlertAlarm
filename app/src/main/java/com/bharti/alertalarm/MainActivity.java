@@ -10,6 +10,8 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.LayoutInflater;
@@ -25,19 +27,32 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
-/** List of all tasks + permission checks. */
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+/** Dashboard: list of alarms like the Clock app, with on/off switches and the next alarm on top. */
 public class MainActivity extends AppCompatActivity {
 
+    private static final int COLOR_DARK = Color.parseColor("#111827");
+    private static final int COLOR_MUTED = Color.parseColor("#9CA3AF");
+    private static final int COLOR_BRAND = Color.parseColor("#4F46E5");
+    private static final int COLOR_RED = Color.parseColor("#B91C1C");
+
     private final List<Reminder> items = new ArrayList<>();
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH);
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable periodicRefresh = new Runnable() {
+        @Override
+        public void run() {
+            refresh();
+            handler.postDelayed(this, 30_000L);
+        }
+    };
 
     private ReminderAdapter adapter;
+    private TextView nextAlarmText;
     private View banner;
     private TextView bannerText;
     private Button bannerButton;
@@ -48,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Notifications.ensureChannel(this);
 
+        nextAlarmText = findViewById(R.id.nextAlarmText);
         ListView list = findViewById(R.id.list);
         list.setEmptyView(findViewById(R.id.emptyText));
         adapter = new ReminderAdapter();
@@ -73,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        refresh();
+        handler.post(periodicRefresh);
         updatePermissionBanner();
 
         // If an alarm is ringing right now, always show the alarm screen.
@@ -83,12 +99,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(periodicRefresh);
+    }
+
+    /** Upcoming and ringing alarms first (soonest on top), finished ones at the bottom (latest first). */
     private void refresh() {
         long now = System.currentTimeMillis();
         ReminderStore.markExpiredAndGetActive(this, now);
+        List<Reminder> all = ReminderStore.getAll(this);
+
+        List<Reminder> open = new ArrayList<>();
+        List<Reminder> finished = new ArrayList<>();
+        for (Reminder r : all) {
+            (r.done ? finished : open).add(r);
+        }
+        open.sort(Comparator.comparingLong(r -> r.startMillis));
+        finished.sort((a, b) -> Long.compare(b.startMillis, a.startMillis));
+
         items.clear();
-        items.addAll(ReminderStore.getAll(this));
+        items.addAll(open);
+        items.addAll(finished);
         adapter.notifyDataSetChanged();
+        updateNextAlarm(open, now);
+    }
+
+    private void updateNextAlarm(List<Reminder> open, long now) {
+        for (Reminder r : open) {
+            if (r.enabled && r.isActive(now)) {
+                nextAlarmText.setText("🔔 Ringing now: " + r.task);
+                return;
+            }
+        }
+        for (Reminder r : open) {
+            if (r.enabled && r.startMillis > now) {
+                nextAlarmText.setText("Next alarm in " + TimeText.until(r.startMillis)
+                        + "\n" + TimeText.dayLabel(r.startMillis) + ", " + TimeText.time(r.startMillis));
+                return;
+            }
+        }
+        nextAlarmText.setText("No upcoming alarms");
     }
 
     private void confirmDelete(Reminder r) {
@@ -98,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Delete this task?")
+                .setTitle("Delete this alarm?")
                 .setMessage(r.task)
                 .setPositiveButton("Delete", (d, w) -> {
                     AlarmScheduler.cancel(this, r.id);
@@ -107,6 +159,27 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    /** On/off switch, like the Clock app. A ringing alarm cannot be switched off. */
+    private void toggle(Reminder r, boolean on) {
+        long now = System.currentTimeMillis();
+        if (r.isActive(now)) {
+            Toast.makeText(this, "This alarm is locked until " + TimeText.time(r.endMillis), Toast.LENGTH_SHORT).show();
+            refresh();
+            return;
+        }
+        ReminderStore.setEnabled(this, r.id, on);
+        r.enabled = on;
+        if (on) {
+            AlarmScheduler.schedule(this, r);
+            Toast.makeText(this, "Alarm on: " + TimeText.dayLabel(r.startMillis) + ", "
+                    + TimeText.time(r.startMillis), Toast.LENGTH_SHORT).show();
+        } else {
+            AlarmScheduler.cancel(this, r.id);
+            Toast.makeText(this, "Alarm off", Toast.LENGTH_SHORT).show();
+        }
+        refresh();
     }
 
     // ------------------------------------------------------------------ permissions
@@ -173,27 +246,43 @@ public class MainActivity extends AppCompatActivity {
             View view = convertView != null ? convertView
                     : LayoutInflater.from(MainActivity.this).inflate(R.layout.item_reminder, parent, false);
             Reminder r = items.get(position);
-
-            TextView task = view.findViewById(R.id.itemTask);
-            TextView time = view.findViewById(R.id.itemTime);
-            TextView status = view.findViewById(R.id.itemStatus);
-
-            task.setText(r.task);
-            time.setText(dateFormat.format(new Date(r.startMillis)) + "  •  "
-                    + TimeText.time(r.startMillis) + " – "
-                    + TimeText.time(r.endMillis));
-
             long now = System.currentTimeMillis();
+
+            TextView time = view.findViewById(R.id.itemTime);
+            TextView until = view.findViewById(R.id.itemUntil);
+            TextView task = view.findViewById(R.id.itemTask);
+            TextView status = view.findViewById(R.id.itemStatus);
+            MaterialSwitch onOff = view.findViewById(R.id.itemSwitch);
+
+            time.setText(TimeText.time(r.startMillis));
+            until.setText("until " + TimeText.time(r.endMillis) + "  ·  " + TimeText.duration(r.endMillis - r.startMillis));
+            task.setText(r.task);
+
+            boolean active = r.isActive(now);
+            boolean dim = r.done || !r.enabled;
+            time.setTextColor(dim ? COLOR_MUTED : COLOR_DARK);
+            task.setTextColor(dim ? COLOR_MUTED : COLOR_DARK);
+
             if (r.done) {
-                status.setText("✓ Done");
-                status.setTextColor(Color.parseColor("#6B7280"));
-            } else if (r.isActive(now)) {
-                status.setText("🔔 Ringing (locked)");
-                status.setTextColor(Color.parseColor("#B91C1C"));
+                status.setText("✓ Done  ·  " + TimeText.dayLabel(r.startMillis));
+                status.setTextColor(COLOR_MUTED);
+            } else if (active) {
+                status.setText("🔔 Ringing · locked until " + TimeText.time(r.endMillis));
+                status.setTextColor(COLOR_RED);
+            } else if (!r.enabled) {
+                status.setText("Off  ·  " + TimeText.dayLabel(r.startMillis));
+                status.setTextColor(COLOR_MUTED);
             } else {
-                status.setText("⏰ Upcoming");
-                status.setTextColor(Color.parseColor("#4F46E5"));
+                status.setText(TimeText.dayLabel(r.startMillis) + "  ·  in " + TimeText.until(r.startMillis));
+                status.setTextColor(COLOR_BRAND);
             }
+
+            // Set the state first with no listener, so recycling rows does not toggle alarms.
+            onOff.setOnCheckedChangeListener(null);
+            onOff.setChecked(r.enabled && !r.done);
+            onOff.setVisibility(r.done ? View.INVISIBLE : View.VISIBLE);
+            onOff.setEnabled(!r.done && !active);
+            onOff.setOnCheckedChangeListener((button, checked) -> toggle(r, checked));
             return view;
         }
     }

@@ -14,7 +14,7 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         long now = System.currentTimeMillis();
         for (Reminder r : ReminderStore.getAll(context)) {
-            if (r.done) {
+            if (r.done || !r.enabled) {
                 continue;
             }
             if (r.endMillis <= now) {

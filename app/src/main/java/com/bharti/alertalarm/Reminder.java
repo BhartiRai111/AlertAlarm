@@ -14,6 +14,8 @@ public class Reminder {
     public long startMillis;
     public long endMillis;
     public boolean done;
+    /** Switched on/off from the dashboard (like the Clock app). */
+    public boolean enabled = true;
 
     public Reminder(long id, String task, long startMillis, long endMillis) {
         this.id = id;
@@ -24,7 +26,7 @@ public class Reminder {
 
     /** True while the alarm must keep ringing (between start and end). */
     public boolean isActive(long now) {
-        return !done && now + START_TOLERANCE_MS >= startMillis && now < endMillis;
+        return enabled && !done && now + START_TOLERANCE_MS >= startMillis && now < endMillis;
     }
 
     JSONObject toJson() throws JSONException {
@@ -34,12 +36,14 @@ public class Reminder {
         o.put("start", startMillis);
         o.put("end", endMillis);
         o.put("done", done);
+        o.put("enabled", enabled);
         return o;
     }
 
     static Reminder fromJson(JSONObject o) throws JSONException {
         Reminder r = new Reminder(o.getLong("id"), o.getString("task"), o.getLong("start"), o.getLong("end"));
         r.done = o.optBoolean("done", false);
+        r.enabled = o.optBoolean("enabled", true);
         return r;
     }
 }

@@ -14,7 +14,20 @@ android {
         versionName = "1.0"
     }
 
+    // Same key on every GitHub build, so a new APK installs over the old one (no uninstall needed)
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("alertalarm-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
         }

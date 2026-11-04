@@ -24,8 +24,8 @@ import java.util.Locale;
  */
 public class AddReminderActivity extends AppCompatActivity {
 
-    private static final long MIN_DURATION_MS = 10_000L;
-    private static final long MAX_DURATION_MS = 12 * 60 * 60 * 1000L;
+    /** Testing mode: a start time in the current minute is allowed and rings right away. */
+    private static final long START_GRACE_MS = 60_000L;
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH);
 
@@ -187,17 +187,20 @@ public class AddReminderActivity extends AppCompatActivity {
             taskInput.setError("Please enter a task");
             return;
         }
-        if (s <= System.currentTimeMillis()) {
-            Toast.makeText(this, "Start time must be in the future", Toast.LENGTH_LONG).show();
+        long now = System.currentTimeMillis();
+        if (s < now - START_GRACE_MS) {
+            Toast.makeText(this, "This start time has already passed", Toast.LENGTH_LONG).show();
             return;
         }
-        if (durationMs < MIN_DURATION_MS) {
-            Toast.makeText(this, "The alarm must ring for at least 10 seconds", Toast.LENGTH_LONG).show();
+        if (durationMs <= 0) {
+            Toast.makeText(this, "Enter how long the alarm should ring", Toast.LENGTH_LONG).show();
             return;
         }
-        if (durationMs > MAX_DURATION_MS) {
-            Toast.makeText(this, "The alarm cannot ring for more than 12 hours", Toast.LENGTH_LONG).show();
-            return;
+        if (s < now) {
+            // Start time is in the current minute: ring now, keep the same end time
+            durationMs = Math.max(1_000L, e - now);
+            s = now;
+            e = s + durationMs;
         }
 
         Reminder reminder = new Reminder(System.currentTimeMillis(), task, s, e);
@@ -206,6 +209,11 @@ public class AddReminderActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Alarm set for " + dateFormat.format(new Date(s)) + ", "
                 + TimeText.time(s), Toast.LENGTH_LONG).show();
+
+        // Go back to the dashboard (alarm list), like the Clock app
+        startActivity(new android.content.Intent(this, MainActivity.class)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP));
         finish();
     }
 }

@@ -5,6 +5,16 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- "Next alarm in 2 hr 5 min", like the Clock app -->
+    <TextView
+        android:id="@+id/nextAlarmText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
     <LinearLayout
         android:id="@+id/banner"
         android:layout_width="match_parent"
@@ -44,15 +54,24 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="No tasks yet.\nTap the button below to add one."
+        android:text="No alarms yet.\nTap the button below to add one."
         android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="Tip: long-press an alarm to delete it"
+        android:textColor="@color/text_muted"
+        android:textSize="12sp" />
 
     <Button
         android:id="@+id/addButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:minHeight="56dp"
-        android:text="+ Add task"
+        android:text="+ Add alarm"
         android:textSize="16sp" />
 </LinearLayout>

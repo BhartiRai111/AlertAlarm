@@ -38,6 +38,40 @@ final class TimeText {
         return sb.toString().trim();
     }
 
+    /** "Today", "Tomorrow" or "Thu, 06 Nov". */
+    static String dayLabel(long millis) {
+        long now = System.currentTimeMillis();
+        if (sameDay(now, millis)) {
+            return "Today";
+        }
+        if (sameDay(now + 24L * 60 * 60 * 1000, millis)) {
+            return "Tomorrow";
+        }
+        return new SimpleDateFormat("EEE, dd MMM", Locale.ENGLISH).format(new Date(millis));
+    }
+
+    /** "2 hr 5 min", "5 min", "less than a minute". */
+    static String until(long millis) {
+        long minutes = (millis - System.currentTimeMillis()) / 60_000;
+        if (minutes < 1) {
+            return "less than a minute";
+        }
+        long d = minutes / (60 * 24);
+        long h = (minutes % (60 * 24)) / 60;
+        long m = minutes % 60;
+        StringBuilder sb = new StringBuilder();
+        if (d > 0) {
+            sb.append(d).append(d == 1 ? " day " : " days ");
+        }
+        if (h > 0) {
+            sb.append(h).append(" hr ");
+        }
+        if (m > 0 && d == 0) {
+            sb.append(m).append(" min");
+        }
+        return sb.toString().trim();
+    }
+
     static boolean sameDay(long a, long b) {
         Calendar ca = Calendar.getInstance();
         ca.setTimeInMillis(a);
