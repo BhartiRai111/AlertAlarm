@@ -1,0 +1,12 @@
+<resources>
+    <!-- Android 15 forces edge-to-edge; opt out so the action bar and buttons are not hidden behind system bars -->
+    <style name="Theme.AlertAlarm" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+
+    <style name="Theme.AlertAlarm.Ringing" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>
