@@ -228,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
         bannerText = findViewById(R.id.bannerText);
         bannerButton = findViewById(R.id.bannerButton);
         findViewById(R.id.seeAll).setOnClickListener(v -> bottomNav.setSelectedItemId(R.id.nav_tasks));
+        findViewById(R.id.homeImport).setOnClickListener(v -> startActivity(new Intent(this, ImportActivity.class)));
     }
 
     private void renderHome(long now) {
@@ -448,6 +449,9 @@ public class MainActivity extends AppCompatActivity {
         chipDone = findViewById(R.id.chipDone);
         taskList = findViewById(R.id.taskList);
         taskEmpty = findViewById(R.id.taskEmpty);
+        TextView importButton = findViewById(R.id.importButton);
+        Ui.tintStart(importButton, R.drawable.ic_upload, R.color.accent);
+        importButton.setOnClickListener(v -> startActivity(new Intent(this, ImportActivity.class)));
 
         chipAll.setOnClickListener(v -> setFilter("all"));
         chipUpcoming.setOnClickListener(v -> setFilter("upcoming"));

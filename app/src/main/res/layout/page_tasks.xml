@@ -10,9 +10,34 @@
     android:paddingEnd="20dp"
     android:visibility="gone">
 
-    <TextView
-        style="@style/Heading"
-        android:text="Tasks" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/Heading"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="Tasks" />
+
+        <TextView
+            android:id="@+id/importButton"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_chip"
+            android:clickable="true"
+            android:drawablePadding="6dp"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="Import"
+            android:textColor="@color/accent"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
