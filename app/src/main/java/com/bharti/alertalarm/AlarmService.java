@@ -67,6 +67,27 @@ public class AlarmService extends Service {
     private long lastSpokenAt = 0;
     private long lastVolumeAt = 0;
     private String currentText = "";
+    private String currentTitle = "Alarm";
+    private long lockedUntil = 0;
+
+    /** Colours the notification cycles through while ringing (same as the alarm screen). */
+    private static final int[] NOTIFICATION_COLORS = {
+            0xFF0F766E, 0xFF1D4ED8, 0xFF7C3AED, 0xFFBE185D, 0xFFC2410C, 0xFF15803D};
+    /** Android drops notification updates faster than about 5 per second, so 300 ms is the safe minimum. */
+    private static final long COLOR_EVERY_MS = 300L;
+    private int colorIndex = 0;
+
+    private final Runnable colorTick = new Runnable() {
+        @Override
+        public void run() {
+            if (finished) {
+                return;
+            }
+            colorIndex = (colorIndex + 1) % NOTIFICATION_COLORS.length;
+            updateNotification(currentTitle);
+            handler.postDelayed(this, COLOR_EVERY_MS);
+        }
+    };
 
     static boolean isRunning() {
         return running;
@@ -98,9 +119,15 @@ public class AlarmService extends Service {
             }
 
             String text = taskText(active);
+            long end = 0;
+            for (Reminder r : active) {
+                end = Math.max(end, r.endMillis);
+            }
+            lockedUntil = end;
             if (!text.equals(currentText)) {
                 currentText = text;
-                updateNotification(notificationTitle(active));
+                currentTitle = notificationTitle(active);
+                updateNotification(currentTitle);
             }
             if (now - lastVolumeAt >= VOLUME_EVERY_MS) {
                 forceMaxVolume();
@@ -149,6 +176,7 @@ public class AlarmService extends Service {
             openRingingScreen();
             initTextToSpeech();
             handler.post(tick);
+            handler.postDelayed(colorTick, COLOR_EVERY_MS);
         }
         return START_STICKY;
     }
@@ -280,7 +308,12 @@ public class AlarmService extends Service {
         return new NotificationCompat.Builder(this, Notifications.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_alarm)
                 .setContentTitle("⏰ Time for your task!")
-                .setContentText(title)
+                .setContentText(lockedUntil > 0
+                        ? title + " · Locked until " + TimeText.time(lockedUntil) : title)
+                // Colourful notification: the background keeps changing colour while it rings
+                .setColor(NOTIFICATION_COLORS[colorIndex])
+                .setColorized(true)
+                .setOnlyAlertOnce(true)   // colour updates must not replay sound or pop up again
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
