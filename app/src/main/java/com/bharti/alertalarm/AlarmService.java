@@ -129,6 +129,18 @@ public class AlarmService extends Service {
                 currentTitle = notificationTitle(active);
                 updateNotification(currentTitle);
             }
+            // Meeting mode: no tone and no voice, only the screen and vibration
+            if (VolumeManager.isMeetingNow(AlarmService.this)) {
+                if (player != null && player.isPlaying()) {
+                    player.pause();
+                }
+                if (speaking && tts != null) {
+                    tts.stop();
+                    speaking = false;
+                }
+                handler.postDelayed(this, TICK_MS);
+                return;
+            }
             if (now - lastVolumeAt >= VOLUME_EVERY_MS) {
                 forceMaxVolume();
                 lastVolumeAt = now;
@@ -198,6 +210,9 @@ public class AlarmService extends Service {
             player.setLooping(true);
             player.prepare();
             player.start();
+            if (VolumeManager.isMeetingNow(this)) {
+                player.pause();   // Meeting mode: screen + vibration only
+            }
         } catch (Exception e) {
             Log.e(TAG, "Could not play alarm tone", e);
             if (player != null) {
@@ -262,6 +277,9 @@ public class AlarmService extends Service {
 
     /** "Lock": if someone turns the alarm volume down, it goes back up within 5 seconds. */
     private void forceMaxVolume() {
+        if (VolumeManager.isMeetingNow(this)) {
+            return;
+        }
         AudioManager am = getSystemService(AudioManager.class);
         try {
             am.setStreamVolume(AudioManager.STREAM_ALARM, am.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);

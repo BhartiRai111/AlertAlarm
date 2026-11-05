@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Volume tab: change ringer mode (Meeting = vibrate) -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Needed on Android 11+ to find the text-to-speech engine -->
@@ -97,6 +99,10 @@
 
         <receiver
             android:name=".AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".VolumeReceiver"
             android:exported="false" />
 
         <receiver

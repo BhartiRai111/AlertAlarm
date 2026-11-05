@@ -17,6 +17,8 @@
 
         <include layout="@layout/page_tasks" />
 
+        <include layout="@layout/page_volume" />
+
         <include layout="@layout/page_settings" />
 
         <ImageView

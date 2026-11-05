@@ -56,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     private View calendarPage;
     private View tasksPage;
     private View settingsPage;
+    private View volumePage;
+    private VolumePage volume;
     private View addButton;
     private BottomNavigationView bottomNav;
 
@@ -110,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
         calendarPage = findViewById(R.id.calendarPage);
         tasksPage = findViewById(R.id.tasksPage);
         settingsPage = findViewById(R.id.settingsPage);
+        volumePage = findViewById(R.id.volumePage);
+        volume = new VolumePage(this);
         addButton = findViewById(R.id.addButton);
         bottomNav = findViewById(R.id.bottomNav);
 
@@ -119,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
         settingsList = findViewById(R.id.settingsList);
         ((TextView) findViewById(R.id.aboutText)).setText(
                 "AlertAlarm speaks your task out loud every 20 seconds and keeps ringing until the end time."
-                        + " The Stop button and the back button stay locked until then.\n\nVersion 2.0");
+                        + " The Stop button and the back button stay locked until then.\n\nVersion 2.2");
 
         bottomNav.setItemActiveIndicatorEnabled(false);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -129,6 +133,10 @@ public class MainActivity extends AppCompatActivity {
 
         addButton.setOnClickListener(v -> {
             Intent i = new Intent(this, AddReminderActivity.class);
+            if (tab == R.id.nav_volume) {
+                volume.openEditor(null, VolumeSchedule.Mode.MEETING);
+                return;
+            }
             if (tab == R.id.nav_calendar) {
                 i.putExtra(AddReminderActivity.EXTRA_DATE, selectedDay);
             }
@@ -183,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
         calendarPage.setVisibility(id == R.id.nav_calendar ? View.VISIBLE : View.GONE);
         tasksPage.setVisibility(id == R.id.nav_tasks ? View.VISIBLE : View.GONE);
         settingsPage.setVisibility(id == R.id.nav_settings ? View.VISIBLE : View.GONE);
+        volumePage.setVisibility(id == R.id.nav_volume ? View.VISIBLE : View.GONE);
         addButton.setVisibility(id == R.id.nav_settings ? View.GONE : View.VISIBLE);
         refresh();
     }
@@ -199,6 +208,8 @@ public class MainActivity extends AppCompatActivity {
             renderCalendar(now);
         } else if (tab == R.id.nav_tasks) {
             renderTasks(now);
+        } else if (tab == R.id.nav_volume) {
+            volume.render();
         } else {
             renderSettings(checks);
         }
@@ -565,6 +576,12 @@ public class MainActivity extends AppCompatActivity {
                         || getSystemService(NotificationManager.class).canUseFullScreenIntent(),
                 Build.VERSION.SDK_INT >= 34
                         ? new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse(pkg)) : null));
+        if (!VolumeStore.getAll(this).isEmpty()) {
+            list.add(new Check("Do Not Disturb access",
+                    "Allow \"Do Not Disturb access\" so volume schedules can change your ringtone.",
+                    VolumeManager.hasDndAccess(this),
+                    new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)));
+        }
         list.add(new Check("Battery optimization off",
                 "Turn off battery optimization so the phone does not stop the alarm.",
                 getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName()),

@@ -178,7 +178,9 @@ public class RingingActivity extends AppCompatActivity {
         ring.setProgress(end > start ? (float) (end - now) / (end - start) : 0f);
         lockPill.setText("Locked until " + endText);
         Ui.tintStart(lockPill, R.drawable.ic_lock, R.color.white);
-        untilView.setText("\"" + active.get(0).task + "\" is spoken every 20 seconds. Volume stays at max.");
+        untilView.setText(VolumeManager.isMeetingNow(this)
+                ? "Meeting mode is on, so the alarm is silent: vibration only."
+                : "\"" + active.get(0).task + "\" is spoken every 20 seconds. Volume stays at max.");
         stopButton.setEnabled(false);
         stopButton.setText("Stop (available at " + endText + ")");
     }
