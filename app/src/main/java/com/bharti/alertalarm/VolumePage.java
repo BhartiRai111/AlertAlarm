@@ -218,11 +218,11 @@ final class VolumePage {
         start.setOnClickListener(x -> new TimePickerDialog(activity, (p, h, m) -> {
             v.startMinutes = h * 60 + m;
             refresh.run();
-        }, v.startMinutes / 60, v.startMinutes % 60, false).show());
+        }, v.startMinutes / 60, v.startMinutes % 60, TimeText.use24h).show());
         end.setOnClickListener(x -> new TimePickerDialog(activity, (p, h, m) -> {
             v.endMinutes = h * 60 + m;
             refresh.run();
-        }, v.endMinutes / 60, v.endMinutes % 60, false).show());
+        }, v.endMinutes / 60, v.endMinutes % 60, TimeText.use24h).show());
         refresh.run();
 
         AlertDialog dialog = new AlertDialog.Builder(activity)
@@ -270,6 +270,6 @@ final class VolumePage {
         Calendar c = Calendar.getInstance();
         c.set(Calendar.HOUR_OF_DAY, (minutes / 60) % 24);
         c.set(Calendar.MINUTE, minutes % 60);
-        return new SimpleDateFormat("hh:mm a", Locale.ENGLISH).format(c.getTime());
+        return TimeText.clock(minutes);
     }
 }

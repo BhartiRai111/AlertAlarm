@@ -8,14 +8,27 @@ import java.util.Locale;
 /** Small helpers to show times and durations in English. */
 final class TimeText {
 
+    /** 24-hour clock (14:30) instead of 12-hour (02:30 PM), from Settings. */
+    static volatile boolean use24h = false;
+
     private TimeText() {
+    }
+
+    /** Minutes after midnight as a clock time, e.g. 870 -> "02:30 PM" or "14:30". */
+    static String clock(int minutes) {
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.HOUR_OF_DAY, (minutes / 60) % 24);
+        c.set(Calendar.MINUTE, minutes % 60);
+        c.set(Calendar.SECOND, 0);
+        return time(c.getTimeInMillis());
     }
 
     /** "11:30 AM", or "11:30:45 AM" when the time has seconds. */
     static String time(long millis) {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(millis);
-        String pattern = c.get(Calendar.SECOND) == 0 ? "hh:mm a" : "hh:mm:ss a";
+        boolean seconds = c.get(Calendar.SECOND) != 0;
+        String pattern = use24h ? (seconds ? "HH:mm:ss" : "HH:mm") : (seconds ? "hh:mm:ss a" : "hh:mm a");
         return new SimpleDateFormat(pattern, Locale.ENGLISH).format(new Date(millis));
     }
 

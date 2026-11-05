@@ -115,7 +115,7 @@ public class AddReminderActivity extends AppCompatActivity {
             start.set(Calendar.HOUR_OF_DAY, h);
             start.set(Calendar.MINUTE, m);
             render();
-        }, start.get(Calendar.HOUR_OF_DAY), start.get(Calendar.MINUTE), false).show());
+        }, start.get(Calendar.HOUR_OF_DAY), start.get(Calendar.MINUTE), TimeText.use24h).show());
         findViewById(R.id.endCard).setOnClickListener(v -> pickEndTime());
 
         TextWatcher durationWatcher = new TextWatcher() {
@@ -264,7 +264,7 @@ public class AddReminderActivity extends AppCompatActivity {
             durationMs = end.getTimeInMillis() - start.getTimeInMillis();
             writeDurationToFields();
             render();
-        }, currentEnd.get(Calendar.HOUR_OF_DAY), currentEnd.get(Calendar.MINUTE), false).show();
+        }, currentEnd.get(Calendar.HOUR_OF_DAY), currentEnd.get(Calendar.MINUTE), TimeText.use24h).show();
     }
 
     private long readDurationFromFields() {

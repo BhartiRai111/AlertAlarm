@@ -21,8 +21,41 @@
 
         <TextView
             style="@style/Label"
-            android:layout_marginTop="20dp"
-            android:text="So the alarm always rings on time" />
+            android:layout_marginTop="22dp"
+            android:text="Language and voice" />
+
+        <LinearLayout
+            android:id="@+id/voiceSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="12dp"
+            android:text="Sound and vibration" />
+
+        <LinearLayout
+            android:id="@+id/soundSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="12dp"
+            android:text="Display" />
+
+        <LinearLayout
+            android:id="@+id/displaySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="12dp"
+            android:text="Permissions (so the alarm always rings on time)" />
 
         <LinearLayout
             android:id="@+id/settingsList"
@@ -33,16 +66,76 @@
         <TextView
             style="@style/Label"
             android:layout_marginTop="12dp"
-            android:text="About" />
+            android:text="Backup" />
+
+        <LinearLayout
+            android:id="@+id/backupSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
         <TextView
-            android:id="@+id/aboutText"
+            style="@style/Label"
+            android:layout_marginTop="12dp"
+            android:text="About" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
-            android:lineSpacingExtra="3dp"
-            android:padding="16dp"
-            android:textColor="@color/soft_text"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/aboutTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/aboutText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/soft_text"
+                android:textSize="13sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="14dp"
+                android:background="@color/stroke" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Coming in the next version"
+                android:textColor="@color/accent"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/aboutNext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/soft_text"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/madeBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:gravity="center"
+            android:text="Made by Bharti Rai"
+            android:textColor="@color/muted"
             android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

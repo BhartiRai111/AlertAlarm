@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.AlertAlarm" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.AlertAlarm" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorOnPrimary">@color/on_accent</item>
         <item name="colorPrimaryContainer">@color/hero</item>
@@ -16,6 +16,8 @@
         <item name="android:textColorSecondary">@color/muted</item>
         <item name="android:statusBarColor">@color/bg</item>
         <item name="android:navigationBarColor">@color/nav</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_bars</item>
     </style>
 
     <style name="Theme.AlertAlarm.Ringing">

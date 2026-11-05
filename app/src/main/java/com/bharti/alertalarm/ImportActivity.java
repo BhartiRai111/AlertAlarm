@@ -354,13 +354,13 @@ public class ImportActivity extends AppCompatActivity {
         start.setOnClickListener(v -> new TimePickerDialog(this, (p, h, m) -> {
             item.startMinutes = h * 60 + m;
             refresh.run();
-        }, item.startMinutes / 60, item.startMinutes % 60, false).show());
+        }, item.startMinutes / 60, item.startMinutes % 60, TimeText.use24h).show());
         end.setOnClickListener(v -> {
             int base = item.endMinutes < 0 ? item.startMinutes + 30 : item.endMinutes;
             new TimePickerDialog(this, (p, h, m) -> {
                 item.endMinutes = h * 60 + m;
                 refresh.run();
-            }, (base / 60) % 24, base % 60, false).show();
+            }, (base / 60) % 24, base % 60, TimeText.use24h).show();
         });
         refresh.run();
 
@@ -402,7 +402,7 @@ public class ImportActivity extends AppCompatActivity {
         Calendar c = Calendar.getInstance();
         c.set(Calendar.HOUR_OF_DAY, (minutes / 60) % 24);
         c.set(Calendar.MINUTE, minutes % 60);
-        return new SimpleDateFormat("hh:mm a", Locale.ENGLISH).format(c.getTime());
+        return TimeText.clock(minutes);
     }
 
     // ================================================================== status

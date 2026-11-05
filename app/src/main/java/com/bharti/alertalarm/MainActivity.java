@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Settings
     private LinearLayout settingsList;
+    private SettingsPage settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,9 +122,7 @@ public class MainActivity extends AppCompatActivity {
         setUpCalendar();
         setUpTasks();
         settingsList = findViewById(R.id.settingsList);
-        ((TextView) findViewById(R.id.aboutText)).setText(
-                "AlertAlarm speaks your task out loud every 20 seconds and keeps ringing until the end time."
-                        + " The Stop button and the back button stay locked until then.\n\nVersion 2.2");
+        settings = new SettingsPage(this);
 
         bottomNav.setItemActiveIndicatorEnabled(false);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -630,21 +629,12 @@ public class MainActivity extends AppCompatActivity {
             }
             settingsList.addView(row);
         }
+        settings.render();
+    }
 
-        View voice = inflater.inflate(R.layout.item_setting, settingsList, false);
-        ((TextView) voice.findViewById(R.id.settingTitle)).setText("Voice");
-        ((TextView) voice.findViewById(R.id.settingDesc)).setText("Change the text-to-speech voice or speed");
-        TextView openVoice = voice.findViewById(R.id.settingAction);
-        openVoice.setText("Open");
-        openVoice.setTextColor(Ui.color(this, R.color.text));
-        openVoice.setBackgroundResource(R.drawable.bg_chip);
-        openVoice.setOnClickListener(v -> {
-            try {
-                startActivity(new Intent("com.android.settings.TTS_SETTINGS"));
-            } catch (ActivityNotFoundException e) {
-                Toast.makeText(this, "Voice settings are not available on this phone", Toast.LENGTH_SHORT).show();
-            }
-        });
-        settingsList.addView(voice);
+    @Override
+    protected void onDestroy() {
+        settings.destroy();
+        super.onDestroy();
     }
 }

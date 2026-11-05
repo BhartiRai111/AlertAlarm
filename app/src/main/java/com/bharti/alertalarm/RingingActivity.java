@@ -50,6 +50,7 @@ public class RingingActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getDelegate().setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
@@ -178,9 +179,15 @@ public class RingingActivity extends AppCompatActivity {
         ring.setProgress(end > start ? (float) (end - now) / (end - start) : 0f);
         lockPill.setText("Locked until " + endText);
         Ui.tintStart(lockPill, R.drawable.ic_lock, R.color.white);
-        untilView.setText(VolumeManager.isMeetingNow(this)
-                ? "Meeting mode is on, so the alarm is silent: vibration only."
-                : "\"" + active.get(0).task + "\" is spoken every 20 seconds. Volume stays at max.");
+        if (VolumeManager.isMeetingNow(this)) {
+            untilView.setText("Meeting mode is on, so the alarm is silent: vibration only.");
+        } else if (!AppSettings.voiceOn(this)) {
+            untilView.setText("Voice announcements are off (Settings)."
+                    + (AppSettings.volumeLock(this) ? " Volume stays at max." : ""));
+        } else {
+            untilView.setText("\"" + active.get(0).task + "\" is spoken every " + AppSettings.voiceEvery(this)
+                    + " seconds." + (AppSettings.volumeLock(this) ? " Volume stays at max." : ""));
+        }
         stopButton.setEnabled(false);
         stopButton.setText("Stop (available at " + endText + ")");
     }

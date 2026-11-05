@@ -43,7 +43,6 @@ public class AlarmService extends Service {
     private static final String TAG = "AlarmService";
     private static final int NOTIFICATION_ID = 4242;
     private static final long TICK_MS = 1_000L;
-    private static final long SPEAK_EVERY_MS = 20_000L;
     private static final long VOLUME_EVERY_MS = 5_000L;
     private static final long MAX_WAKE_LOCK_MS = 48 * 60 * 60 * 1000L;
 
@@ -62,6 +61,7 @@ public class AlarmService extends Service {
 
     private volatile boolean ttsReady = false;
     private volatile boolean speaking = false;
+    private volatile boolean hindiVoice = false;
     private boolean started = false;
     private boolean finished = false;
     private long lastSpokenAt = 0;
@@ -145,7 +145,8 @@ public class AlarmService extends Service {
                 forceMaxVolume();
                 lastVolumeAt = now;
             }
-            if (ttsReady && !speaking && now - lastSpokenAt >= SPEAK_EVERY_MS) {
+            if (ttsReady && !speaking && AppSettings.voiceOn(AlarmService.this)
+                    && now - lastSpokenAt >= AppSettings.voiceEvery(AlarmService.this) * 1000L) {
                 speak(text);
                 lastSpokenAt = now;
             }
@@ -196,7 +197,9 @@ public class AlarmService extends Service {
     // ------------------------------------------------------------------ sound, voice, vibration
 
     private void startRinging() {
-        Uri uri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM);
+        String chosen = AppSettings.alarmTone(this);
+        Uri uri = chosen != null ? Uri.parse(chosen)
+                : RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM);
         if (uri == null) {
             uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         }
@@ -224,6 +227,9 @@ public class AlarmService extends Service {
     }
 
     private void startVibration() {
+        if (!AppSettings.vibration(this) && !VolumeManager.isMeetingNow(this)) {
+            return;   // vibration off in Settings (Meeting mode always vibrates, since it is silent)
+        }
         vibrator = getSystemService(Vibrator.class);
         if (vibrator != null && vibrator.hasVibrator()) {
             vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 800, 800}, 0), alarmAttributes);
@@ -238,11 +244,16 @@ public class AlarmService extends Service {
             }
             tts.setAudioAttributes(alarmAttributes);
             // Indian English voice if installed, otherwise the default English voice
-            int result = tts.setLanguage(new Locale("en", "IN"));
+            // Voice language from Settings (Hindi or Indian English); English if that voice is not installed
+            int result = tts.setLanguage(AppSettings.voiceLocale(AlarmService.this));
+            hindiVoice = "hi".equals(AppSettings.voiceLanguage(AlarmService.this));
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                tts.setLanguage(Locale.ENGLISH);
+                hindiVoice = false;
+                if (tts.setLanguage(new Locale("en", "IN")) < 0) {
+                    tts.setLanguage(Locale.ENGLISH);
+                }
             }
-            tts.setSpeechRate(0.9f);
+            tts.setSpeechRate(AppSettings.voiceSpeed(AlarmService.this));
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onStart(String utteranceId) {
@@ -263,7 +274,7 @@ public class AlarmService extends Service {
     }
 
     private void speak(String tasks) {
-        String message = "Attention please. It is time for your task: " + tasks;
+        String message = AppSettings.announcement(this, tasks, hindiVoice);
         speaking = true;
         if (player != null && player.isPlaying()) {
             player.pause();   // tone pauses so the voice is clear; tick() resumes it
@@ -277,7 +288,7 @@ public class AlarmService extends Service {
 
     /** "Lock": if someone turns the alarm volume down, it goes back up within 5 seconds. */
     private void forceMaxVolume() {
-        if (VolumeManager.isMeetingNow(this)) {
+        if (VolumeManager.isMeetingNow(this) || !AppSettings.volumeLock(this)) {
             return;
         }
         AudioManager am = getSystemService(AudioManager.class);

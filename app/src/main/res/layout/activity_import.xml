@@ -255,7 +255,7 @@
                     android:layout_marginTop="6dp"
                     android:lineSpacingExtra="3dp"
                     android:text="Each task needs a start time and a name. Examples:\n05-11-2026 | 11:00 AM | 12:00 PM | Once | LeetCode\n7:00 PM - 7:20 PM Apply to jobs (daily)\nTomorrow 6 pm Gym"
-                    android:textColor="#CDE7E3"
+                    android:textColor="@color/hero_body"
                     android:textSize="13sp" />
             </LinearLayout>
         </LinearLayout>

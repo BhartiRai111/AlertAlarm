@@ -373,7 +373,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:lineSpacingExtra="3dp"
-                android:textColor="#CDE7E3"
+                android:textColor="@color/hero_body"
                 android:textSize="13sp" />
         </LinearLayout>
 
