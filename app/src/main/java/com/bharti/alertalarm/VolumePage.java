@@ -17,13 +17,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.slider.Slider;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
-/** The Volume tab: what is active now, the three modes, and the list of schedules. */
+/** The Volume tab: Meeting, Travel, Prayer and Office, each with an on/off switch, volume sliders and an optional time. */
 final class VolumePage {
 
     private final AppCompatActivity activity;
@@ -31,8 +32,7 @@ final class VolumePage {
     private final ImageView nowIcon;
     private final TextView nowTitle;
     private final TextView nowSub;
-    private final LinearLayout list;
-    private final View empty;
+    private final LinearLayout modes;
 
     VolumePage(AppCompatActivity activity) {
         this.activity = activity;
@@ -40,13 +40,8 @@ final class VolumePage {
         nowIcon = activity.findViewById(R.id.volumeNowIcon);
         nowTitle = activity.findViewById(R.id.volumeNowTitle);
         nowSub = activity.findViewById(R.id.volumeNowSub);
-        list = activity.findViewById(R.id.volumeList);
-        empty = activity.findViewById(R.id.volumeEmpty);
-
+        modes = activity.findViewById(R.id.volumeModes);
         activity.findViewById(R.id.dndFix).setOnClickListener(v -> openDndSettings(activity));
-        activity.findViewById(R.id.presetMeeting).setOnClickListener(v -> openEditor(null, VolumeSchedule.Mode.MEETING));
-        activity.findViewById(R.id.presetTravel).setOnClickListener(v -> openEditor(null, VolumeSchedule.Mode.TRAVEL));
-        activity.findViewById(R.id.presetPrayer).setOnClickListener(v -> openEditor(null, VolumeSchedule.Mode.PRAYER));
     }
 
     static void openDndSettings(AppCompatActivity a) {
@@ -58,118 +53,115 @@ final class VolumePage {
         }
     }
 
+    static int icon(VolumeProfile.Mode mode) {
+        switch (mode) {
+            case MEETING:
+                return R.drawable.ic_vibrate;
+            case PRAYER:
+                return R.drawable.ic_volume_low;
+            case OFFICE:
+                return R.drawable.ic_office;
+            default:
+                return R.drawable.ic_volume;
+        }
+    }
+
     void render() {
         VolumeManager.reconcile(activity);
-        List<VolumeSchedule> all = VolumeStore.getAll(activity);
+        long now = System.currentTimeMillis();
         banner.setVisibility(VolumeManager.hasDndAccess(activity) ? View.GONE : View.VISIBLE);
 
-        VolumeSchedule active = VolumeManager.active(activity);
+        VolumeProfile active = VolumeManager.active(activity);
         if (active != null) {
             nowIcon.setImageResource(icon(active.mode));
             nowTitle.setText(active.mode.title + " mode");
-            nowSub.setText(active.mode.effect + " until " + TimeText.time(VolumeManager.activeEnd(activity)));
+            long until = VolumeManager.activeUntil(activity);
+            nowSub.setText(until > 0 ? "Until " + TimeText.time(until) : "On until you switch it off");
         } else {
             nowIcon.setImageResource(R.drawable.ic_volume);
             nowTitle.setText("Normal");
             nowSub.setText("Your phone's own volume");
         }
 
-        list.removeAllViews();
-        long now = System.currentTimeMillis();
+        modes.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(activity);
-        for (VolumeSchedule v : all) {
-            View row = inflater.inflate(R.layout.item_alarm, list, false);
-            ImageView ic = row.findViewById(R.id.itemIcon);
-            TextView title = row.findViewById(R.id.itemTitle);
-            TextView meta = row.findViewById(R.id.itemMeta);
-            boolean on = v.enabled;
-            boolean isActive = active != null && active.id == v.id;
-            ic.setImageResource(icon(v.mode));
+        List<VolumeProfile> all = VolumeStore.getAll(activity);
+        for (VolumeProfile p : all) {
+            View card = inflater.inflate(R.layout.item_volume_mode, modes, false);
+            boolean on = VolumeManager.isOn(p, now);
+            boolean winning = active != null && active.mode == p.mode;
+
+            ImageView ic = card.findViewById(R.id.modeIcon);
+            ic.setImageResource(icon(p.mode));
             ic.setBackgroundResource(on ? R.drawable.bg_icon_accent : R.drawable.bg_icon_done);
             ic.setImageTintList(ColorStateList.valueOf(Ui.color(activity, on ? R.color.accent : R.color.muted)));
-            title.setText(v.mode.title + " · " + v.mode.effect);
-            title.setTextColor(Ui.color(activity, on ? R.color.text : R.color.muted));
-            String m = v.timeRange() + " · " + v.whenLabel();
-            if (isActive) {
-                m = "On now · " + m;
-                meta.setTextColor(Ui.color(activity, R.color.accent));
-            } else if (!on) {
-                m = m + (v.isOver(now) ? " · Done" : " · Off");
+            ((TextView) card.findViewById(R.id.modeTitle)).setText(p.mode.title);
+
+            TextView status = card.findViewById(R.id.modeStatus);
+            if (winning) {
+                status.setText(p.manualOn ? "On now" : "On now (set time)");
+                status.setTextColor(Ui.color(activity, R.color.accent));
+            } else if (on) {
+                status.setText("On, but " + (active != null ? active.mode.title : "another mode") + " was switched on later");
+            } else {
+                status.setText("Off");
             }
-            meta.setText(m);
 
-            MaterialSwitch sw = row.findViewById(R.id.itemSwitch);
-            sw.setVisibility(View.VISIBLE);
+            TextView levels = card.findViewById(R.id.modeLevels);
+            levels.setText(p.levelsText());
+            Ui.tintStart(levels, R.drawable.ic_volume, R.color.muted);
+            TextView time = card.findViewById(R.id.modeTime);
+            if (p.timed) {
+                time.setVisibility(View.VISIBLE);
+                time.setText(p.timeText());
+                Ui.tintStart(time, R.drawable.ic_clock, R.color.muted);
+            }
+
+            MaterialSwitch sw = card.findViewById(R.id.modeSwitch);
             sw.setChecked(on);
-            sw.setOnCheckedChangeListener((b, checked) -> {
-                if (checked && v.isOver(System.currentTimeMillis())) {
-                    Toast.makeText(activity, "This time is over. Tap it to pick a new date.", Toast.LENGTH_SHORT).show();
-                    b.setChecked(false);
-                    return;
-                }
-                v.enabled = checked;
-                VolumeStore.save(activity, v);
-                render();
-            });
-            row.setOnClickListener(x -> openEditor(v, v.mode));
-            row.setOnLongClickListener(x -> {
-                new AlertDialog.Builder(activity)
-                        .setTitle("Delete this schedule?")
-                        .setMessage(v.mode.title + " · " + v.timeRange())
-                        .setPositiveButton("Delete", (d, w) -> {
-                            VolumeStore.delete(activity, v.id);
-                            render();
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
-                return true;
-            });
-            list.addView(row);
-        }
-        empty.setVisibility(all.isEmpty() ? View.VISIBLE : View.GONE);
-    }
-
-    static int icon(VolumeSchedule.Mode mode) {
-        switch (mode) {
-            case MEETING:
-                return R.drawable.ic_vibrate;
-            case PRAYER:
-                return R.drawable.ic_volume_low;
-            default:
-                return R.drawable.ic_volume;
+            sw.setContentDescription(p.mode.title + " mode");
+            sw.setOnCheckedChangeListener((b, checked) -> toggle(p, checked));
+            card.setOnClickListener(v -> openEditor(p));
+            modes.addView(card);
         }
     }
 
-    // ------------------------------------------------------------------ add / edit
-
-    /** existing = null for a new schedule. */
-    void openEditor(VolumeSchedule existing, VolumeSchedule.Mode mode) {
-        VolumeSchedule v = new VolumeSchedule();
-        if (existing != null) {
-            v.id = existing.id;
-            v.mode = existing.mode;
-            v.daily = existing.daily;
-            v.year = existing.year;
-            v.month = existing.month;
-            v.day = existing.day;
-            v.startMinutes = existing.startMinutes;
-            v.endMinutes = existing.endMinutes;
+    private void toggle(VolumeProfile p, boolean on) {
+        long now = System.currentTimeMillis();
+        if (on) {
+            p.manualOn = true;
+            p.onSince = now;
+            p.skipUntil = 0;
         } else {
-            Calendar c = Calendar.getInstance();
-            v.id = System.currentTimeMillis();
-            v.mode = mode;
-            v.year = c.get(Calendar.YEAR);
-            v.month = c.get(Calendar.MONTH);
-            v.day = c.get(Calendar.DAY_OF_MONTH);
-            int next = (c.get(Calendar.HOUR_OF_DAY) + 1) * 60;   // next full hour, for one hour
-            v.startMinutes = next % (24 * 60);
-            v.endMinutes = (next + 60) % (24 * 60);
+            p.manualOn = false;
+            long[] w = p.windowAt(now);
+            if (w != null) {
+                p.skipUntil = w[1];   // switched off during its set time: skip the rest of today's time
+            }
         }
+        VolumeStore.save(activity, p);
+        if (on && !VolumeManager.hasDndAccess(activity)) {
+            Toast.makeText(activity, "Allow Do Not Disturb access, otherwise the volume may not change.",
+                    Toast.LENGTH_LONG).show();
+        }
+        render();
+    }
 
+    // ------------------------------------------------------------------ editor
+
+    private void openEditor(VolumeProfile original) {
+        VolumeProfile p = copy(original);
         View view = LayoutInflater.from(activity).inflate(R.layout.dialog_volume, null);
-        TextView[] modes = {view.findViewById(R.id.modeMeeting), view.findViewById(R.id.modeTravel),
-                view.findViewById(R.id.modePrayer)};
-        TextView hint = view.findViewById(R.id.modeHint);
+        Slider ring = view.findViewById(R.id.ringSlider);
+        Slider notification = view.findViewById(R.id.notificationSlider);
+        Slider call = view.findViewById(R.id.callSlider);
+        Slider media = view.findViewById(R.id.mediaSlider);
+        TextView ringValue = view.findViewById(R.id.ringValue);
+        TextView notificationValue = view.findViewById(R.id.notificationValue);
+        TextView callValue = view.findViewById(R.id.callValue);
+        TextView mediaValue = view.findViewById(R.id.mediaValue);
+        MaterialSwitch timed = view.findViewById(R.id.timedSwitch);
+        View timeSection = view.findViewById(R.id.timeSection);
         TextView once = view.findViewById(R.id.volOnce);
         TextView daily = view.findViewById(R.id.volDaily);
         TextView date = view.findViewById(R.id.volDate);
@@ -177,99 +169,135 @@ final class VolumePage {
         TextView end = view.findViewById(R.id.volEnd);
 
         Runnable refresh = () -> {
-            for (int i = 0; i < modes.length; i++) {
-                Ui.segment(modes[i], VolumeSchedule.Mode.values()[i] == v.mode);
-            }
-            hint.setText(hintFor(v.mode));
-            Ui.segment(once, !v.daily);
-            Ui.segment(daily, v.daily);
-            date.setVisibility(v.daily ? View.GONE : View.VISIBLE);
+            ringValue.setText(p.ring == 0 ? "Vibrate" : p.ring + "%");
+            notificationValue.setText(p.notification + "%");
+            callValue.setText(p.call + "%");
+            mediaValue.setText(p.media + "%");
+            timeSection.setVisibility(p.timed ? View.VISIBLE : View.GONE);
+            Ui.segment(once, !p.daily);
+            Ui.segment(daily, p.daily);
+            date.setVisibility(p.daily ? View.GONE : View.VISIBLE);
             Calendar c = Calendar.getInstance();
-            c.set(v.year, v.month, v.day);
+            c.set(p.year, p.month, p.day);
             date.setText("Date: " + new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH).format(c.getTime()));
-            start.setText("From " + clock(v.startMinutes));
-            end.setText("To " + clock(v.endMinutes));
+            start.setText("From " + TimeText.clock(p.startMinutes));
+            end.setText("To " + TimeText.clock(p.endMinutes));
         };
-        for (int i = 0; i < modes.length; i++) {
-            VolumeSchedule.Mode value = VolumeSchedule.Mode.values()[i];
-            modes[i].setOnClickListener(x -> {
-                v.mode = value;
-                refresh.run();
-            });
-        }
+        Runnable loadSliders = () -> {
+            ring.setValue(snap(p.ring));
+            notification.setValue(snap(p.notification));
+            call.setValue(snap(p.call));
+            media.setValue(snap(p.media));
+        };
+        loadSliders.run();
+        ring.addOnChangeListener((s, value, fromUser) -> {
+            p.ring = Math.round(value);
+            refresh.run();
+        });
+        notification.addOnChangeListener((s, value, fromUser) -> {
+            p.notification = Math.round(value);
+            refresh.run();
+        });
+        call.addOnChangeListener((s, value, fromUser) -> {
+            p.call = Math.round(value);
+            refresh.run();
+        });
+        media.addOnChangeListener((s, value, fromUser) -> {
+            p.media = Math.round(value);
+            refresh.run();
+        });
+
+        timed.setChecked(p.timed);
+        timed.setOnCheckedChangeListener((b, checked) -> {
+            p.timed = checked;
+            refresh.run();
+        });
         once.setOnClickListener(x -> {
-            v.daily = false;
+            p.daily = false;
             refresh.run();
         });
         daily.setOnClickListener(x -> {
-            v.daily = true;
+            p.daily = true;
             refresh.run();
         });
         date.setOnClickListener(x -> {
-            DatePickerDialog d = new DatePickerDialog(activity, (p, y, m, dd) -> {
-                v.year = y;
-                v.month = m;
-                v.day = dd;
+            DatePickerDialog d = new DatePickerDialog(activity, (picker, y, m, dd) -> {
+                p.year = y;
+                p.month = m;
+                p.day = dd;
                 refresh.run();
-            }, v.year, v.month, v.day);
+            }, p.year, p.month, p.day);
             d.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
             d.show();
         });
-        start.setOnClickListener(x -> new TimePickerDialog(activity, (p, h, m) -> {
-            v.startMinutes = h * 60 + m;
+        start.setOnClickListener(x -> new TimePickerDialog(activity, (picker, h, m) -> {
+            p.startMinutes = h * 60 + m;
             refresh.run();
-        }, v.startMinutes / 60, v.startMinutes % 60, TimeText.use24h).show());
-        end.setOnClickListener(x -> new TimePickerDialog(activity, (p, h, m) -> {
-            v.endMinutes = h * 60 + m;
+        }, p.startMinutes / 60, p.startMinutes % 60, TimeText.use24h).show());
+        end.setOnClickListener(x -> new TimePickerDialog(activity, (picker, h, m) -> {
+            p.endMinutes = h * 60 + m;
             refresh.run();
-        }, v.endMinutes / 60, v.endMinutes % 60, TimeText.use24h).show());
+        }, p.endMinutes / 60, p.endMinutes % 60, TimeText.use24h).show());
         refresh.run();
 
         AlertDialog dialog = new AlertDialog.Builder(activity)
-                .setTitle(existing == null ? "New volume schedule" : "Change schedule")
+                .setTitle(p.mode.title + " mode")
                 .setView(view)
                 .setPositiveButton("Save", null)
                 .setNegativeButton("Cancel", null)
+                .setNeutralButton("Reset", null)
                 .create();
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(x -> {
-            if (v.startMinutes == v.endMinutes) {
-                Toast.makeText(activity, "Start and end time are the same", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (v.isOver(System.currentTimeMillis())) {
-                Toast.makeText(activity, "This time is already over. Pick a later time or Daily.", Toast.LENGTH_LONG).show();
-                return;
-            }
-            v.enabled = true;
-            VolumeStore.save(activity, v);
-            dialog.dismiss();
-            if (!VolumeManager.hasDndAccess(activity)) {
-                Toast.makeText(activity, "Saved. Now allow Do Not Disturb access so the volume can change.",
-                        Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(activity, v.mode.title + " set: " + v.timeRange() + ", " + v.whenLabel(),
-                        Toast.LENGTH_SHORT).show();
-            }
-            render();
-        }));
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(x -> {
+                p.resetLevels();
+                loadSliders.run();
+                refresh.run();
+            });
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(x -> {
+                long now = System.currentTimeMillis();
+                if (p.timed && p.startMinutes == p.endMinutes) {
+                    Toast.makeText(activity, "Start and end time are the same", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (p.timeIsOver(now)) {
+                    Toast.makeText(activity, "This time is already over. Pick a later time or Daily.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (p.timed && (original.startMinutes != p.startMinutes || original.endMinutes != p.endMinutes
+                        || original.daily != p.daily || !original.timed)) {
+                    p.skipUntil = 0;   // a new time range starts fresh
+                }
+                VolumeStore.save(activity, p);
+                dialog.dismiss();
+                Toast.makeText(activity, p.mode.title + " saved", Toast.LENGTH_SHORT).show();
+                render();
+            });
+        });
         dialog.show();
     }
 
-    private static String hintFor(VolumeSchedule.Mode mode) {
-        switch (mode) {
-            case MEETING:
-                return "Ringtone off, phone on vibrate. Task alarms stay silent too (vibration only).";
-            case TRAVEL:
-                return "Ringtone and notifications at full volume.";
-            default:
-                return "Ringtone and notifications at low volume.";
-        }
+    /** Sliders only take multiples of 5. */
+    private static float snap(int percent) {
+        return Math.max(0, Math.min(100, Math.round(percent / 5f) * 5));
     }
 
-    private static String clock(int minutes) {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.HOUR_OF_DAY, (minutes / 60) % 24);
-        c.set(Calendar.MINUTE, minutes % 60);
-        return TimeText.clock(minutes);
+    private static VolumeProfile copy(VolumeProfile o) {
+        VolumeProfile p = VolumeProfile.defaults(o.mode);
+        p.ring = o.ring;
+        p.notification = o.notification;
+        p.call = o.call;
+        p.media = o.media;
+        p.manualOn = o.manualOn;
+        p.onSince = o.onSince;
+        p.timed = o.timed;
+        p.daily = o.daily;
+        p.year = o.year;
+        p.month = o.month;
+        p.day = o.day;
+        p.startMinutes = o.startMinutes;
+        p.endMinutes = o.endMinutes;
+        p.skipUntil = o.skipUntil;
+        return p;
     }
 }

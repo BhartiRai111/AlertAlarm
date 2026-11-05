@@ -24,7 +24,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Change your ringtone volume automatically for a time range."
+            android:text="Set your phone volume with one switch."
             android:textColor="@color/muted"
             android:textSize="13sp" />
 
@@ -121,153 +121,20 @@
         <TextView
             style="@style/Label"
             android:layout_marginTop="20dp"
-            android:text="Tap a mode to schedule it" />
+            android:text="Switch a mode on. Tap a mode to change its volume or set a time." />
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:id="@+id/presetMeeting"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                
-                android:layout_weight="1"
-                android:background="@drawable/bg_card"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_icon_accent"
-                    android:importantForAccessibility="no"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_vibrate"
-                    app:tint="@color/accent" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="Meeting"
-                    android:textColor="@color/text"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Vibrate only"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/presetTravel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_card"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_icon_accent"
-                    android:importantForAccessibility="no"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_volume"
-                    app:tint="@color/accent" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="Travel"
-                    android:textColor="@color/text"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Full volume"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/presetPrayer"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_card"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_icon_accent"
-                    android:importantForAccessibility="no"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_volume_low"
-                    app:tint="@color/accent" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="Prayer"
-                    android:textColor="@color/text"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Low volume"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <TextView
-            style="@style/Label"
-            android:layout_marginTop="22dp"
-            android:text="Your schedules" />
-
-        <LinearLayout
-            android:id="@+id/volumeList"
+            android:id="@+id/volumeModes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
 
         <TextView
-            android:id="@+id/volumeEmpty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_empty"
-            android:gravity="center"
-            android:padding="24dp"
-            android:text="No volume schedules yet. Tap a mode above or +."
+            android:layout_marginTop="6dp"
+            android:text="The alarm volume is never changed. When all modes are off, your phone's own volume comes back."
             android:textColor="@color/muted"
-            android:textSize="14sp" />
+            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

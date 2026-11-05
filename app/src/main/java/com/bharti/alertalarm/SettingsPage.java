@@ -89,7 +89,7 @@ final class SettingsPage {
                 "A strict task alarm. It speaks your task out loud and keeps ringing until the end time. "
                         + "The Stop button and the back button stay locked until then.\n\n"
                         + "Also: repeat alarms, calendar, import tasks from PDF / Excel / notes, "
-                        + "and volume modes for meetings, travel and prayer.");
+                        + "and volume modes for meetings, travel, prayer and office.");
         ((TextView) activity.findViewById(R.id.aboutNext)).setText(
                 "•  All screens in Hindi\n"
                         + "•  Import tasks from scanned PDFs and photos\n"
@@ -260,7 +260,7 @@ final class SettingsPage {
 
     private void renderBackup() {
         backup.removeAllViews();
-        valueRow(backup, "Back up to a file", "Saves all alarms, volume schedules and settings", "Save", () -> {
+        valueRow(backup, "Back up to a file", "Saves all alarms, volume modes and settings", "Save", () -> {
             String date = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date());
             try {
                 backupFile.launch("AlertAlarm-backup-" + date + ".json");
@@ -288,7 +288,7 @@ final class SettingsPage {
             }
             root.put("reminders", reminders);
             JSONArray volumes = new JSONArray();
-            for (VolumeSchedule v : VolumeStore.getAll(activity)) {
+            for (VolumeProfile v : VolumeStore.getAll(activity)) {
                 volumes.put(v.toJson());
             }
             root.put("volume", volumes);
@@ -301,7 +301,7 @@ final class SettingsPage {
                 }
                 out.write(root.toString(2).getBytes(StandardCharsets.UTF_8));
             }
-            toast("Backup saved: " + reminders.length() + " alarms, " + volumes.length() + " volume schedules");
+            toast("Backup saved: " + reminders.length() + " alarms, " + volumes.length() + " volume modes");
         } catch (Exception e) {
             toast("Could not save the backup: " + e.getMessage());
         }
@@ -332,7 +332,7 @@ final class SettingsPage {
         }
 
         List<Reminder> reminders = new ArrayList<>();
-        List<VolumeSchedule> volumes = new ArrayList<>();
+        List<VolumeProfile> volumes = new ArrayList<>();
         try {
             JSONArray r = root.optJSONArray("reminders");
             for (int i = 0; r != null && i < r.length(); i++) {
@@ -340,7 +340,7 @@ final class SettingsPage {
             }
             JSONArray v = root.optJSONArray("volume");
             for (int i = 0; v != null && i < v.length(); i++) {
-                volumes.add(VolumeSchedule.fromJson(v.getJSONObject(i)));
+                volumes.add(VolumeProfile.fromJson(v.getJSONObject(i)));
             }
         } catch (Exception e) {
             toast("This backup file is damaged");
@@ -349,15 +349,15 @@ final class SettingsPage {
         JSONObject settings = root.optJSONObject("settings");
         new AlertDialog.Builder(activity)
                 .setTitle("Restore backup?")
-                .setMessage("Add " + reminders.size() + " alarms and " + volumes.size()
-                        + " volume schedules from this backup?" + (settings != null ? " Settings will be restored too." : "")
+                .setMessage("Add " + reminders.size() + " alarms from this backup and restore " + volumes.size()
+                        + " volume modes?" + (settings != null ? " Settings will be restored too." : "")
                         + "\n\nAlarms already on this phone are kept.")
                 .setPositiveButton("Restore", (d, w) -> restore(reminders, volumes, settings))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void restore(List<Reminder> reminders, List<VolumeSchedule> volumes, JSONObject settings) {
+    private void restore(List<Reminder> reminders, List<VolumeProfile> volumes, JSONObject settings) {
         List<Long> existing = new ArrayList<>();
         for (Reminder r : ReminderStore.getAll(activity)) {
             existing.add(r.id);
@@ -376,14 +376,11 @@ final class SettingsPage {
                 AlarmScheduler.schedule(activity, r);
             }
         }
-        List<Long> existingVolumes = new ArrayList<>();
-        for (VolumeSchedule v : VolumeStore.getAll(activity)) {
-            existingVolumes.add(v.id);
-        }
-        for (VolumeSchedule v : volumes) {
-            if (!existingVolumes.contains(v.id)) {
-                VolumeStore.save(activity, v);
-            }
+        // Volume modes: the backup's levels and times replace these (on/off state is not restored)
+        for (VolumeProfile v : volumes) {
+            v.manualOn = false;
+            v.skipUntil = 0;
+            VolumeStore.save(activity, v);
         }
         VolumeManager.reconcile(activity);
         if (settings != null) {

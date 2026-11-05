@@ -10,11 +10,11 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Saves volume schedules, and the phone's own volume while a schedule is changing it. */
+/** Saves the four volume modes, and the phone's own volume while a mode is changing it. */
 final class VolumeStore {
 
     private static final String PREFS = "alert_alarm_volume";
-    private static final String KEY = "schedules";
+    private static final String KEY = "profiles";
 
     private VolumeStore() {
     }
@@ -23,25 +23,34 @@ final class VolumeStore {
         return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    static synchronized List<VolumeSchedule> getAll(Context c) {
-        List<VolumeSchedule> list = new ArrayList<>();
+    /** Always all four modes, in order (missing ones get their default levels). */
+    static synchronized List<VolumeProfile> getAll(Context c) {
+        VolumeProfile[] byMode = new VolumeProfile[VolumeProfile.Mode.values().length];
         try {
             JSONArray arr = new JSONArray(prefs(c).getString(KEY, "[]"));
             for (int i = 0; i < arr.length(); i++) {
-                list.add(VolumeSchedule.fromJson(arr.getJSONObject(i)));
+                try {
+                    VolumeProfile p = VolumeProfile.fromJson(arr.getJSONObject(i));
+                    byMode[p.mode.ordinal()] = p;
+                } catch (IllegalArgumentException | JSONException ignored) {
+                    // unknown mode in an old save
+                }
             }
         } catch (JSONException e) {
-            Log.e("VolumeStore", "Could not read schedules", e);
+            Log.e("VolumeStore", "Could not read volume modes", e);
         }
-        list.sort((a, b) -> Integer.compare(a.startMinutes, b.startMinutes));
+        List<VolumeProfile> list = new ArrayList<>();
+        for (VolumeProfile.Mode m : VolumeProfile.Mode.values()) {
+            list.add(byMode[m.ordinal()] != null ? byMode[m.ordinal()] : VolumeProfile.defaults(m));
+        }
         return list;
     }
 
-    static synchronized void saveAll(Context c, List<VolumeSchedule> list) {
+    static synchronized void saveAll(Context c, List<VolumeProfile> list) {
         JSONArray arr = new JSONArray();
         try {
-            for (VolumeSchedule v : list) {
-                arr.put(v.toJson());
+            for (VolumeProfile p : list) {
+                arr.put(p.toJson());
             }
         } catch (JSONException e) {
             return;
@@ -49,16 +58,9 @@ final class VolumeStore {
         prefs(c).edit().putString(KEY, arr.toString()).commit();
     }
 
-    static synchronized void save(Context c, VolumeSchedule schedule) {
-        List<VolumeSchedule> list = getAll(c);
-        list.removeIf(v -> v.id == schedule.id);
-        list.add(schedule);
-        saveAll(c, list);
-    }
-
-    static synchronized void delete(Context c, long id) {
-        List<VolumeSchedule> list = getAll(c);
-        list.removeIf(v -> v.id == id);
+    static synchronized void save(Context c, VolumeProfile profile) {
+        List<VolumeProfile> list = getAll(c);
+        list.set(profile.mode.ordinal(), profile);
         saveAll(c, list);
     }
 }

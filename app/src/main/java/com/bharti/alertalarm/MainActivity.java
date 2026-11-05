@@ -132,10 +132,6 @@ public class MainActivity extends AppCompatActivity {
 
         addButton.setOnClickListener(v -> {
             Intent i = new Intent(this, AddReminderActivity.class);
-            if (tab == R.id.nav_volume) {
-                volume.openEditor(null, VolumeSchedule.Mode.MEETING);
-                return;
-            }
             if (tab == R.id.nav_calendar) {
                 i.putExtra(AddReminderActivity.EXTRA_DATE, selectedDay);
             }
@@ -191,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         tasksPage.setVisibility(id == R.id.nav_tasks ? View.VISIBLE : View.GONE);
         settingsPage.setVisibility(id == R.id.nav_settings ? View.VISIBLE : View.GONE);
         volumePage.setVisibility(id == R.id.nav_volume ? View.VISIBLE : View.GONE);
-        addButton.setVisibility(id == R.id.nav_settings ? View.GONE : View.VISIBLE);
+        addButton.setVisibility(id == R.id.nav_settings || id == R.id.nav_volume ? View.GONE : View.VISIBLE);
         refresh();
     }
 
@@ -575,9 +571,13 @@ public class MainActivity extends AppCompatActivity {
                         || getSystemService(NotificationManager.class).canUseFullScreenIntent(),
                 Build.VERSION.SDK_INT >= 34
                         ? new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse(pkg)) : null));
-        if (!VolumeStore.getAll(this).isEmpty()) {
+        boolean volumeUsed = false;
+        for (VolumeProfile p : VolumeStore.getAll(this)) {
+            volumeUsed |= p.manualOn || p.timed;
+        }
+        if (volumeUsed) {
             list.add(new Check("Do Not Disturb access",
-                    "Allow \"Do Not Disturb access\" so volume schedules can change your ringtone.",
+                    "Allow \"Do Not Disturb access\" so volume modes can change your phone volume.",
                     VolumeManager.hasDndAccess(this),
                     new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)));
         }
