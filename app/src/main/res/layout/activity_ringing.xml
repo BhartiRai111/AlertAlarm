@@ -44,10 +44,21 @@
         android:textSize="28sp"
         android:textStyle="bold" />
 
+    <TextView
+        android:id="@+id/quoteText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:textColor="#D9FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="italic" />
+
     <FrameLayout
-        android:layout_width="240dp"
-        android:layout_height="240dp"
-        android:layout_marginTop="26dp">
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_marginTop="20dp">
 
         <com.bharti.alertalarm.RingProgressView
             android:id="@+id/ringView"
@@ -124,11 +135,62 @@
         android:textColor="@color/stop_text"
         android:textSize="16sp" />
 
+    <LinearLayout
+        android:id="@+id/doneRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/notDoneButton"
+            android:layout_width="0dp"
+            android:layout_height="58dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_glass"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="❌  Not done"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/doneButton"
+            android:layout_width="0dp"
+            android:layout_height="58dp"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_button_accent"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="✅  Done"
+            android:textColor="@color/on_accent"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/emergencyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginTop="6dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:text="Emergency? Stop early"
+        android:textColor="#E6FFFFFF"
+        android:textSize="13sp" />
+
     <TextView
         android:id="@+id/footerText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="2dp"
         android:text="Back button is blocked while it rings."
         android:textColor="#B3FFFFFF"
         android:textSize="12sp" />

@@ -144,60 +144,63 @@ final class VolumeManager {
     }
 
     private static void apply(Context c, VolumeProfile p) {
+        AlarmLog.add(c, "🔈 " + p.mode.title + " mode on (" + p.levelsText() + ")");
         AudioManager am = c.getSystemService(AudioManager.class);
         // Ringtone 0 = vibrate. Volumes can only be set in normal mode, so set them first.
-        safe(() -> am.setRingerMode(AudioManager.RINGER_MODE_NORMAL));
+        safe(c, () -> am.setRingerMode(AudioManager.RINGER_MODE_NORMAL));
         if (p.ring > 0) {
-            setPercent(am, AudioManager.STREAM_RING, p.ring);
-            setPercent(am, AudioManager.STREAM_NOTIFICATION, p.notification);
+            setPercent(c, am, AudioManager.STREAM_RING, p.ring);
+            setPercent(c, am, AudioManager.STREAM_NOTIFICATION, p.notification);
         }
-        setPercent(am, AudioManager.STREAM_VOICE_CALL, Math.max(p.call, 1));
-        setPercent(am, AudioManager.STREAM_MUSIC, p.media);
+        setPercent(c, am, AudioManager.STREAM_VOICE_CALL, Math.max(p.call, 1));
+        setPercent(c, am, AudioManager.STREAM_MUSIC, p.media);
         if (p.ring == 0) {
-            safe(() -> am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE));
+            safe(c, () -> am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE));
         } else if (p.notification == 0) {
-            safe(() -> am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0));
+            safe(c, () -> am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0));
         }
     }
 
-    private static void setPercent(AudioManager am, int stream, int percent) {
+    private static void setPercent(Context c, AudioManager am, int stream, int percent) {
         int max = am.getStreamMaxVolume(stream);
         int level = Math.round(max * Math.max(0, Math.min(100, percent)) / 100f);
         if (percent > 0) {
             level = Math.max(1, level);
         }
         int finalLevel = Math.min(max, level);
-        safe(() -> am.setStreamVolume(stream, finalLevel, 0));
+        safe(c, () -> am.setStreamVolume(stream, finalLevel, 0));
     }
 
     private static void restore(Context c) {
+        AlarmLog.add(c, "🔈 Volume modes off: phone volume back to normal");
         SharedPreferences p = VolumeStore.prefs(c);
         AudioManager am = c.getSystemService(AudioManager.class);
         int ringer = p.getInt(SAVED_RINGER, AudioManager.RINGER_MODE_NORMAL);
-        safe(() -> am.setRingerMode(AudioManager.RINGER_MODE_NORMAL));
+        safe(c, () -> am.setRingerMode(AudioManager.RINGER_MODE_NORMAL));
         if (p.contains(SAVED_RING)) {
-            safe(() -> am.setStreamVolume(AudioManager.STREAM_RING, Math.max(1, p.getInt(SAVED_RING, 1)), 0));
+            safe(c, () -> am.setStreamVolume(AudioManager.STREAM_RING, Math.max(1, p.getInt(SAVED_RING, 1)), 0));
         }
         if (p.contains(SAVED_NOTIFICATION)) {
-            safe(() -> am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, Math.max(1, p.getInt(SAVED_NOTIFICATION, 1)), 0));
+            safe(c, () -> am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, Math.max(1, p.getInt(SAVED_NOTIFICATION, 1)), 0));
         }
         if (p.contains(SAVED_CALL)) {
-            safe(() -> am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, Math.max(1, p.getInt(SAVED_CALL, 1)), 0));
+            safe(c, () -> am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, Math.max(1, p.getInt(SAVED_CALL, 1)), 0));
         }
         if (p.contains(SAVED_MEDIA)) {
-            safe(() -> am.setStreamVolume(AudioManager.STREAM_MUSIC, p.getInt(SAVED_MEDIA, 0), 0));
+            safe(c, () -> am.setStreamVolume(AudioManager.STREAM_MUSIC, p.getInt(SAVED_MEDIA, 0), 0));
         }
         if (ringer != AudioManager.RINGER_MODE_NORMAL) {
-            safe(() -> am.setRingerMode(ringer));
+            safe(c, () -> am.setRingerMode(ringer));
         }
     }
 
     /** Without Do Not Disturb access some changes are refused; the rest still happen. */
-    private static void safe(Runnable r) {
+    private static void safe(Context c, Runnable r) {
         try {
             r.run();
         } catch (SecurityException e) {
             Log.w(TAG, "Volume change blocked (Do Not Disturb access is off?)", e);
+            AlarmLog.add(c, "⚠ Volume change blocked: allow Do Not Disturb access");
         }
     }
 

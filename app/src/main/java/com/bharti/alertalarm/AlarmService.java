@@ -76,6 +76,14 @@ public class AlarmService extends Service {
     /** Android drops notification updates faster than about 5 per second, so 300 ms is the safe minimum. */
     private static final long COLOR_EVERY_MS = 300L;
     private int colorIndex = 0;
+    /** Every task occurrence that rang in this session, to ask "Did you finish it?" at the end. */
+    private final java.util.Map<String, TaskCheck.Rang> rang = new java.util.LinkedHashMap<>();
+
+    private void remember(List<Reminder> active) {
+        for (Reminder r : active) {
+            rang.put(r.id + ":" + r.startMillis, new TaskCheck.Rang(r.id, r.startMillis, r.task));
+        }
+    }
 
     private final Runnable colorTick = new Runnable() {
         @Override
@@ -117,6 +125,7 @@ public class AlarmService extends Service {
                 finishAlarm();   // end time reached: the ONLY way the alarm stops
                 return;
             }
+            remember(active);
 
             String text = taskText(active);
             long end = 0;
@@ -176,7 +185,12 @@ public class AlarmService extends Service {
         List<Reminder> active = ReminderStore.markExpiredAndGetActive(this, System.currentTimeMillis());
 
         // Must be called quickly after startForegroundService(), even if we stop right away.
-        startInForeground(active.isEmpty() ? "Alarm" : notificationTitle(active));
+        try {
+            startInForeground(active.isEmpty() ? "Alarm" : notificationTitle(active));
+        } catch (RuntimeException e) {
+            AlarmLog.error(this, "Android did not allow the alarm to start", e);
+            throw e;
+        }
 
         if (active.isEmpty()) {
             finishAlarm();
@@ -184,6 +198,9 @@ public class AlarmService extends Service {
         }
         if (!started) {
             started = true;
+            remember(active);
+            AlarmLog.add(this, "🔔 Ringing: " + taskText(active)
+                    + (VolumeManager.isMeetingNow(this) ? " (Meeting mode: silent)" : ""));
             startRinging();
             startVibration();
             openRingingScreen();
@@ -218,6 +235,7 @@ public class AlarmService extends Service {
             }
         } catch (Exception e) {
             Log.e(TAG, "Could not play alarm tone", e);
+            AlarmLog.error(this, "Could not play the alarm tone (vibration and voice still work)", e);
             if (player != null) {
                 player.release();
                 player = null;
@@ -240,6 +258,7 @@ public class AlarmService extends Service {
         tts = new TextToSpeech(this, status -> {
             if (status != TextToSpeech.SUCCESS) {
                 Log.w(TAG, "Text-to-speech not available");
+                AlarmLog.add(AlarmService.this, "⚠ Text-to-speech is not available, so the task is not spoken");
                 return;
             }
             tts.setAudioAttributes(alarmAttributes);
@@ -378,6 +397,10 @@ public class AlarmService extends Service {
         finished = true;
         handler.removeCallbacksAndMessages(null);
         releaseAll();
+        if (!rang.isEmpty()) {
+            AlarmLog.add(this, "Alarm ended");
+            TaskCheck.ask(this, new java.util.ArrayList<>(rang.values()));
+        }
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -413,6 +436,7 @@ public class AlarmService extends Service {
             releaseAll();
             long now = System.currentTimeMillis();
             if (!ReminderStore.getActive(this, now).isEmpty()) {
+                AlarmLog.add(this, "⚠ Android stopped the alarm early. Restarting it in 3 seconds");
                 AlarmScheduler.scheduleWake(this, now + 3_000L);
             }
         }

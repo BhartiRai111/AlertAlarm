@@ -33,6 +33,9 @@ public class Reminder {
     public int dayOfMonth;    // 1-31, used by MONTHLY and YEARLY
     public int month;         // 0-11, used by YEARLY
     public long durationMs;
+    /** Answer to "Did you finish it?" for the occurrence that started at resultFor (TaskCheck constants). */
+    public int result;
+    public long resultFor;
 
     public Reminder(long id, String task, long startMillis, long endMillis) {
         this.id = id;
@@ -155,6 +158,8 @@ public class Reminder {
         o.put("day", dayOfMonth);
         o.put("month", month);
         o.put("duration", durationMs);
+        o.put("result", result);
+        o.put("result_for", resultFor);
         return o;
     }
 
@@ -173,6 +178,8 @@ public class Reminder {
         r.dayOfMonth = o.optInt("day", r.dayOfMonth);
         r.month = o.optInt("month", r.month);
         r.durationMs = o.optLong("duration", r.durationMs);
+        r.result = o.optInt("result", 0);
+        r.resultFor = o.optLong("result_for", 0);
         return r;
     }
 }

@@ -66,6 +66,17 @@
         <TextView
             style="@style/Label"
             android:layout_marginTop="12dp"
+            android:text="Troubleshooting" />
+
+        <LinearLayout
+            android:id="@+id/helpSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="12dp"
             android:text="Backup" />
 
         <LinearLayout

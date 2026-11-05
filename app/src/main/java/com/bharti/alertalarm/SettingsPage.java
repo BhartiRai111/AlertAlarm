@@ -48,6 +48,7 @@ final class SettingsPage {
     private final LinearLayout sound;
     private final LinearLayout display;
     private final LinearLayout backup;
+    private final LinearLayout help;
     private final LayoutInflater inflater;
     private TextToSpeech testVoice;
 
@@ -62,6 +63,7 @@ final class SettingsPage {
         sound = activity.findViewById(R.id.soundSection);
         display = activity.findViewById(R.id.displaySection);
         backup = activity.findViewById(R.id.backupSection);
+        help = activity.findViewById(R.id.helpSection);
 
         tonePicker = activity.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 this::onTonePicked);
@@ -107,7 +109,42 @@ final class SettingsPage {
         renderVoice();
         renderSound();
         renderDisplay();
+        renderHelp();
         renderBackup();
+    }
+
+    // ================================================================== troubleshooting
+
+    private void renderHelp() {
+        help.removeAllViews();
+        valueRow(help, "Alarm log", "When alarms were set and rang, and any errors", "Open", this::showLog);
+    }
+
+    private void showLog() {
+        TextView text = new TextView(activity);
+        int pad = (int) (22 * activity.getResources().getDisplayMetrics().density);
+        text.setPadding(pad, pad / 2, pad, 0);
+        text.setTextSize(13);
+        text.setTextIsSelectable(true);
+        text.setTextColor(Ui.color(activity, R.color.soft_text));
+        text.setText(AlarmLog.text(activity));
+        android.widget.ScrollView scroll = new android.widget.ScrollView(activity);
+        scroll.addView(text);
+        new AlertDialog.Builder(activity)
+                .setTitle("Alarm log")
+                .setView(scroll)
+                .setPositiveButton("Close", null)
+                .setNeutralButton("Clear", (d, w) -> {
+                    AlarmLog.clear(activity);
+                    toast("Log cleared");
+                })
+                .setNegativeButton("Share", (d, w) -> {
+                    Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain")
+                            .putExtra(Intent.EXTRA_SUBJECT, "AlertAlarm log")
+                            .putExtra(Intent.EXTRA_TEXT, AlarmLog.text(activity));
+                    activity.startActivity(Intent.createChooser(share, "Share the alarm log"));
+                })
+                .show();
     }
 
     // ================================================================== voice

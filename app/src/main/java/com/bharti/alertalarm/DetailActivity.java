@@ -105,7 +105,8 @@ public class DetailActivity extends AppCompatActivity {
         duration.setText(TimeText.duration(length));
 
         if (r.done) {
-            status.setText("Done · rang " + TimeText.dayLabel(r.startMillis) + ", " + TimeText.time(r.startMillis));
+            status.setText("Done · rang " + TimeText.dayLabel(r.startMillis) + ", " + TimeText.time(r.startMillis)
+                    + TaskCheck.label(r));
         } else if (active) {
             status.setText("Ringing now · locked until " + TimeText.time(r.endMillis));
         } else if (!r.enabled) {

@@ -22,6 +22,7 @@ final class AlarmScheduler {
     static void schedule(Context c, Reminder r) {
         long trigger = Math.max(r.startMillis, System.currentTimeMillis() + 1_000L);
         setAlarm(c, trigger, firePendingIntent(c, requestCode(r.id)));
+        AlarmLog.add(c, "Alarm set: " + r.task + " · " + TimeText.dayLabel(trigger) + ", " + TimeText.time(trigger));
     }
 
     /** Used to restart ringing quickly if Android kills the service before the end time. */
@@ -47,6 +48,7 @@ final class AlarmScheduler {
             Log.w("AlarmScheduler", "Exact alarm not allowed, using inexact alarm", e);
         }
         // Fallback when the "Alarms & reminders" permission is off: may be a few minutes late.
+        AlarmLog.add(c, "⚠ \"Alarms & reminders\" is not allowed, so this alarm may ring a few minutes late");
         am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, fire);
     }
 

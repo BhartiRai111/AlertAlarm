@@ -13,6 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        AlarmLog.add(context, "Phone restarted or app updated: setting alarms again");
         ReminderStore.markExpiredAndGetActive(context, System.currentTimeMillis());
         for (Reminder r : ReminderStore.getAll(context)) {
             if (!r.done && r.enabled) {

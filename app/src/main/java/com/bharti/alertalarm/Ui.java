@@ -99,13 +99,14 @@ final class Ui {
     /** "Every day · 07:00 PM · 20 min", "Today · 09:00 PM · 15 min", "Done · Today, 12:00 PM". */
     static String meta(Reminder r, long now) {
         if (r.done) {
-            return "Done · " + TimeText.dayLabel(r.startMillis) + ", " + TimeText.time(r.startMillis);
+            return "Done · " + TimeText.dayLabel(r.startMillis) + ", " + TimeText.time(r.startMillis) + TaskCheck.label(r);
         }
         if (r.isActive(now)) {
             return "Ringing now · locked until " + TimeText.time(r.endMillis);
         }
         String when = r.isRepeating() ? r.repeatLabel() : TimeText.dayLabel(r.startMillis);
-        String s = when + " · " + TimeText.time(r.startMillis) + " · " + TimeText.duration(r.durationMs);
+        String s = when + " · " + TimeText.time(r.startMillis) + " · " + TimeText.duration(r.durationMs)
+                + (r.isRepeating() ? TaskCheck.label(r) : "");
         return r.enabled ? s : s + " · Off";
     }
 

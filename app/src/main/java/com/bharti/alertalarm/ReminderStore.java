@@ -85,6 +85,45 @@ final class ReminderStore {
         saveAll(c, list);
     }
 
+    static synchronized Reminder find(Context c, long id) {
+        for (Reminder r : getAll(c)) {
+            if (r.id == id) {
+                return r;
+            }
+        }
+        return null;
+    }
+
+    /** Saves the answer to "Did you finish it?". Returns the task, or null if it was deleted. */
+    static synchronized Reminder setResult(Context c, long id, long occurrenceStart, int result) {
+        List<Reminder> list = getAll(c);
+        for (Reminder r : list) {
+            if (r.id == id) {
+                r.result = result;
+                r.resultFor = occurrenceStart;
+                saveAll(c, list);
+                return r;
+            }
+        }
+        return null;
+    }
+
+    /** Emergency stop: the ringing tasks end now (one-time ones become done, repeating ones move on). */
+    static synchronized List<Reminder> stopNow(Context c, long now) {
+        List<Reminder> list = getAll(c);
+        List<Reminder> stopped = new ArrayList<>();
+        for (Reminder r : list) {
+            if (r.isActive(now)) {
+                r.endMillis = now;
+                stopped.add(r);
+            }
+        }
+        if (!stopped.isEmpty()) {
+            saveAll(c, list);
+        }
+        return stopped;
+    }
+
     static synchronized List<Reminder> getActive(Context c, long now) {
         List<Reminder> active = new ArrayList<>();
         for (Reminder r : getAll(c)) {
