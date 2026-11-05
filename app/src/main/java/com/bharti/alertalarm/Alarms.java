@@ -41,6 +41,9 @@ final class Alarms {
                 .setPositiveButton("Delete", (d, w) -> {
                     AlarmScheduler.cancel(c, r.id);
                     ReminderStore.delete(c, r.id);
+                    if (r.voicePath != null) {
+                        new java.io.File(r.voicePath).delete();
+                    }
                     after.run();
                 })
                 .setNegativeButton("Cancel", null)

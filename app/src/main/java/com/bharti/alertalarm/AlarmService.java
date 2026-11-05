@@ -55,6 +55,8 @@ public class AlarmService extends Service {
             .build();
 
     private MediaPlayer player;
+    /** Plays the user's own recorded message. */
+    private MediaPlayer voicePlayer;
     private TextToSpeech tts;
     private Vibrator vibrator;
     private PowerManager.WakeLock wakeLock;
@@ -143,8 +145,11 @@ public class AlarmService extends Service {
                 if (player != null && player.isPlaying()) {
                     player.pause();
                 }
-                if (speaking && tts != null) {
-                    tts.stop();
+                if (speaking) {
+                    if (tts != null) {
+                        tts.stop();
+                    }
+                    stopVoicePlayer();
                     speaking = false;
                 }
                 handler.postDelayed(this, TICK_MS);
@@ -154,9 +159,14 @@ public class AlarmService extends Service {
                 forceMaxVolume();
                 lastVolumeAt = now;
             }
-            if (ttsReady && !speaking && AppSettings.voiceOn(AlarmService.this)
+            String recording = recordingFor(active);
+            if ((ttsReady || recording != null) && !speaking && AppSettings.voiceOn(AlarmService.this)
                     && now - lastSpokenAt >= AppSettings.voiceEvery(AlarmService.this) * 1000L) {
-                speak(text);
+                if (recording != null) {
+                    playRecording(recording);
+                } else {
+                    speak(text);
+                }
                 lastSpokenAt = now;
             }
             if (!speaking && player != null && !player.isPlaying()) {
@@ -305,6 +315,50 @@ public class AlarmService extends Service {
         }
     }
 
+    /** The first ringing task's own recorded message, if it has one and the file exists. */
+    private static String recordingFor(List<Reminder> active) {
+        for (Reminder r : active) {
+            if (r.voicePath != null && new java.io.File(r.voicePath).exists()) {
+                return r.voicePath;
+            }
+        }
+        return null;
+    }
+
+    private void playRecording(String path) {
+        speaking = true;
+        if (player != null && player.isPlaying()) {
+            player.pause();   // tone pauses so the message is clear; tick() resumes it
+        }
+        stopVoicePlayer();
+        try {
+            voicePlayer = new MediaPlayer();
+            voicePlayer.setAudioAttributes(alarmAttributes);
+            voicePlayer.setDataSource(path);
+            voicePlayer.setOnCompletionListener(mp -> {
+                stopVoicePlayer();
+                speaking = false;
+            });
+            voicePlayer.prepare();
+            voicePlayer.start();
+        } catch (Exception e) {
+            stopVoicePlayer();
+            speaking = false;
+            AlarmLog.error(this, "Could not play your recorded message", e);
+        }
+    }
+
+    private void stopVoicePlayer() {
+        if (voicePlayer != null) {
+            try {
+                voicePlayer.release();
+            } catch (RuntimeException ignored) {
+                // already released
+            }
+            voicePlayer = null;
+        }
+    }
+
     /** "Lock": if someone turns the alarm volume down, it goes back up within 5 seconds. */
     private void forceMaxVolume() {
         if (VolumeManager.isMeetingNow(this) || !AppSettings.volumeLock(this)) {
@@ -419,6 +473,7 @@ public class AlarmService extends Service {
             tts.shutdown();
             tts = null;
         }
+        stopVoicePlayer();
         if (vibrator != null) {
             vibrator.cancel();
         }

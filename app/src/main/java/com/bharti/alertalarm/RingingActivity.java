@@ -222,12 +222,24 @@ public class RingingActivity extends AppCompatActivity {
         } else if (!AppSettings.voiceOn(this)) {
             untilView.setText("Voice announcements are off (Settings)."
                     + (AppSettings.volumeLock(this) ? " Volume stays at max." : ""));
+        } else if (hasRecording(active)) {
+            untilView.setText("Your recorded message plays every " + AppSettings.voiceEvery(this) + " seconds."
+                    + (AppSettings.volumeLock(this) ? " Volume stays at max." : ""));
         } else {
             untilView.setText("\"" + active.get(0).task + "\" is spoken every " + AppSettings.voiceEvery(this)
                     + " seconds." + (AppSettings.volumeLock(this) ? " Volume stays at max." : ""));
         }
         stopButton.setEnabled(false);
         stopButton.setText("Stop (available at " + endText + ")");
+    }
+
+    private static boolean hasRecording(List<Reminder> active) {
+        for (Reminder r : active) {
+            if (r.voicePath != null && new java.io.File(r.voicePath).exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void countdownText(String text) {

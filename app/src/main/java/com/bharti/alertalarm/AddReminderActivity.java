@@ -36,6 +36,13 @@ public class AddReminderActivity extends AppCompatActivity {
     static final String EXTRA_ID = "id";
     /** New alarm on this day (start of day, from the calendar). */
     static final String EXTRA_DATE = "date";
+    /** Pre-filled new alarm (from voice or a calendar event). */
+    static final String EXTRA_TASK = "task";
+    static final String EXTRA_START = "start";
+    static final String EXTRA_DURATION = "duration";
+    static final String EXTRA_REPEAT = "repeat";
+    static final String EXTRA_SPOKEN = "spoken";
+    private static final long MAX_RECORDING_MS = 30_000L;
 
     /** Testing mode: a start time in the current minute is allowed and rings right away. */
     private static final long START_GRACE_MS = 60_000L;
@@ -66,6 +73,34 @@ public class AddReminderActivity extends AppCompatActivity {
     private Spinner monthSpinner;
     private Spinner daySpinner;
     private TextView preview;
+
+    // Own voice message
+    private String voicePath;          // saved file of the alarm being edited
+    private boolean voiceDeleted;      // user removed it
+    private java.io.File newRecording; // recorded on this screen, not saved yet
+    private android.media.MediaRecorder recorder;
+    private android.media.MediaPlayer voicePlayer;
+    private TextView voiceStatus;
+    private TextView recordButton;
+
+    private final androidx.activity.result.ActivityResultLauncher<Intent> speech =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        String heard = VoiceInput.heard(result);
+                        if (heard != null) {
+                            applySpoken(heard);
+                        }
+                    });
+    private final androidx.activity.result.ActivityResultLauncher<String> micPermission =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                    granted -> {
+                        if (granted) {
+                            startRecording();
+                        } else {
+                            Toast.makeText(this, "Microphone permission is needed to record your voice",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +140,12 @@ public class AddReminderActivity extends AppCompatActivity {
         editId = getIntent().getLongExtra(EXTRA_ID, 0);
         if (editId != 0) {
             loadForEdit(editId);
+        } else {
+            applyPrefill();
         }
+        setUpVoiceRecorder();
+        findViewById(R.id.voiceInputButton).setOnClickListener(v -> listen());
+        Ui.tintStart(findViewById(R.id.voiceInputButton), R.drawable.ic_mic, R.color.accent);
 
         setUpRepeatButtons();
         setUpSpinners();
@@ -175,6 +215,242 @@ public class AddReminderActivity extends AppCompatActivity {
         dayOfMonth = found.dayOfMonth;
         month = found.month;
         durationMs = found.durationMs > 0 ? found.durationMs : found.endMillis - found.startMillis;
+        voicePath = found.voicePath;
+    }
+
+    // ------------------------------------------------------------------ voice: "Say it"
+
+    /** Fields filled from voice or a calendar event (before the spinners are set up). */
+    private void applyPrefill() {
+        Intent in = getIntent();
+        String task = in.getStringExtra(EXTRA_TASK);
+        if (task != null) {
+            taskInput.setText(task);
+        }
+        long s = in.getLongExtra(EXTRA_START, 0);
+        if (s > 0) {
+            start.setTimeInMillis(s);
+            start.set(Calendar.SECOND, 0);
+            start.set(Calendar.MILLISECOND, 0);
+            dayOfMonth = start.get(Calendar.DAY_OF_MONTH);
+            month = start.get(Calendar.MONTH);
+        }
+        long d = in.getLongExtra(EXTRA_DURATION, 0);
+        if (d > 0) {
+            durationMs = d;
+        }
+        String rep = in.getStringExtra(EXTRA_REPEAT);
+        if (rep != null) {
+            try {
+                repeat = Reminder.Repeat.valueOf(rep);
+            } catch (IllegalArgumentException ignored) {
+                // keep Once
+            }
+        }
+        String spoken = in.getStringExtra(EXTRA_SPOKEN);
+        if (spoken != null) {
+            Toast.makeText(this, s > 0 ? "Heard: \"" + spoken + "\". Check and tap Set alarm."
+                    : "Heard: \"" + spoken + "\", but no time. Pick the time below.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void listen() {
+        try {
+            speech.launch(VoiceInput.recognizeIntent());
+        } catch (android.content.ActivityNotFoundException e) {
+            Toast.makeText(this, "Voice typing is not available. Install or update the Google app.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /** Fill this screen from what was said. */
+    private void applySpoken(String spoken) {
+        com.bharti.alertalarm.imports.ImportItem item = VoiceInput.parse(spoken);
+        if (item == null) {
+            taskInput.setText(spoken);
+            Toast.makeText(this, "No time heard in \"" + spoken + "\". Pick the time below.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        taskInput.setText(item.task);
+        start.setTimeInMillis(item.startMillis(System.currentTimeMillis()));
+        dayOfMonth = start.get(Calendar.DAY_OF_MONTH);
+        month = start.get(Calendar.MONTH);
+        durationMs = item.durationMs();
+        repeat = Reminder.Repeat.valueOf(item.repeat.name());
+        monthSpinner.setSelection(month);
+        daySpinner.setSelection(dayOfMonth - 1);
+        writeDurationToFields();
+        showRowsForRepeat();
+        render();
+        Toast.makeText(this, "Heard: \"" + spoken + "\"", Toast.LENGTH_SHORT).show();
+    }
+
+    // ------------------------------------------------------------------ own voice message
+
+    private void setUpVoiceRecorder() {
+        voiceStatus = findViewById(R.id.voiceStatus);
+        recordButton = findViewById(R.id.recordButton);
+        recordButton.setOnClickListener(v -> {
+            if (recorder != null) {
+                stopRecording();
+            } else if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                startRecording();
+            } else {
+                micPermission.launch(android.Manifest.permission.RECORD_AUDIO);
+            }
+        });
+        findViewById(R.id.playVoiceButton).setOnClickListener(v -> playVoice());
+        findViewById(R.id.deleteVoiceButton).setOnClickListener(v -> {
+            stopPlaying();
+            if (newRecording != null) {
+                newRecording.delete();
+                newRecording = null;
+            }
+            if (voicePath != null) {
+                voiceDeleted = true;
+            }
+            updateVoiceUi();
+        });
+        updateVoiceUi();
+    }
+
+    private java.io.File currentVoiceFile() {
+        if (newRecording != null && newRecording.exists()) {
+            return newRecording;
+        }
+        if (voicePath != null && !voiceDeleted && new java.io.File(voicePath).exists()) {
+            return new java.io.File(voicePath);
+        }
+        return null;
+    }
+
+    private void updateVoiceUi() {
+        boolean has = currentVoiceFile() != null;
+        findViewById(R.id.playVoiceButton).setEnabled(has);
+        findViewById(R.id.playVoiceButton).setAlpha(has ? 1f : 0.4f);
+        findViewById(R.id.deleteVoiceButton).setEnabled(has);
+        findViewById(R.id.deleteVoiceButton).setAlpha(has ? 1f : 0.4f);
+        recordButton.setText(recorder != null ? "■ Stop" : has ? "● Record again" : "● Record");
+        voiceStatus.setText(recorder != null ? "Recording… speak now (up to 30 sec)"
+                : has ? "Your voice message will play instead of the computer voice. ✓"
+                : "Record a message (up to 30 sec). It plays instead of the computer voice.");
+    }
+
+    @SuppressWarnings("deprecation")
+    private void startRecording() {
+        stopPlaying();
+        try {
+            java.io.File dir = new java.io.File(getFilesDir(), "voice");
+            dir.mkdirs();
+            if (newRecording != null) {
+                newRecording.delete();
+            }
+            newRecording = new java.io.File(dir, "new_" + System.currentTimeMillis() + ".m4a");
+            recorder = android.os.Build.VERSION.SDK_INT >= 31 ? new android.media.MediaRecorder(this)
+                    : new android.media.MediaRecorder();
+            recorder.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
+            recorder.setAudioEncodingBitRate(96_000);
+            recorder.setAudioSamplingRate(44_100);
+            recorder.setMaxDuration((int) MAX_RECORDING_MS);
+            recorder.setOutputFile(newRecording.getAbsolutePath());
+            recorder.setOnInfoListener((mr, what, extra) -> {
+                if (what == android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+                    stopRecording();
+                }
+            });
+            recorder.prepare();
+            recorder.start();
+        } catch (Exception e) {
+            if (recorder != null) {
+                recorder.release();
+                recorder = null;
+            }
+            newRecording = null;
+            Toast.makeText(this, "Could not record: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+        updateVoiceUi();
+    }
+
+    private void stopRecording() {
+        if (recorder == null) {
+            return;
+        }
+        try {
+            recorder.stop();
+        } catch (RuntimeException e) {
+            // stopped too quickly: nothing usable was recorded
+            if (newRecording != null) {
+                newRecording.delete();
+                newRecording = null;
+            }
+        }
+        recorder.release();
+        recorder = null;
+        updateVoiceUi();
+    }
+
+    private void playVoice() {
+        java.io.File f = currentVoiceFile();
+        if (f == null) {
+            return;
+        }
+        stopPlaying();
+        try {
+            voicePlayer = new android.media.MediaPlayer();
+            voicePlayer.setDataSource(f.getAbsolutePath());
+            voicePlayer.setOnCompletionListener(mp -> stopPlaying());
+            voicePlayer.prepare();
+            voicePlayer.start();
+        } catch (Exception e) {
+            stopPlaying();
+            Toast.makeText(this, "Could not play the recording", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void stopPlaying() {
+        if (voicePlayer != null) {
+            voicePlayer.release();
+            voicePlayer = null;
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopRecording();
+        stopPlaying();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing() && newRecording != null && !saved) {
+            newRecording.delete();   // left without saving
+        }
+    }
+
+    private boolean saved;
+
+    /** Moves a new recording next to the alarm and returns the path to save on it. */
+    private String finalVoicePath(long id) {
+        if (newRecording != null && newRecording.exists()) {
+            java.io.File target = new java.io.File(newRecording.getParentFile(), "voice_" + id + ".m4a");
+            if (voicePath != null && !voicePath.equals(target.getAbsolutePath())) {
+                new java.io.File(voicePath).delete();
+            }
+            target.delete();
+            return newRecording.renameTo(target) ? target.getAbsolutePath() : newRecording.getAbsolutePath();
+        }
+        if (voiceDeleted) {
+            if (voicePath != null) {
+                new java.io.File(voicePath).delete();
+            }
+            return null;
+        }
+        return voicePath;
     }
 
     // ------------------------------------------------------------------ repeat + date fields
@@ -366,6 +642,9 @@ public class AddReminderActivity extends AppCompatActivity {
         if (editId != 0) {
             AlarmScheduler.cancel(this, editId);
         }
+        stopRecording();
+        r.voicePath = finalVoicePath(r.id);
+        saved = true;
         ReminderStore.save(this, r);
         AlarmScheduler.schedule(this, r);
 

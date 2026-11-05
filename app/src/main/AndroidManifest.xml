@@ -24,12 +24,20 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Volume tab: change ringer mode (Meeting = vibrate) -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- Record your own voice message for an alarm -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Show Google Calendar events in the Calendar tab (read only) -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Needed on Android 11+ to find the text-to-speech engine -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- "Say it": the phone's speech-to-text -->
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
     </queries>
 
@@ -108,6 +116,10 @@
 
         <receiver
             android:name=".TaskCheckReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".BedtimeReceiver"
             android:exported="false" />
 
         <receiver

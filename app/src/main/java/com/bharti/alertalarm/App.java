@@ -22,5 +22,6 @@ public class App extends Application {
             }
         });
         AppSettings.applyTheme(AppSettings.theme(this));
+        Bedtime.schedule(this);
     }
 }

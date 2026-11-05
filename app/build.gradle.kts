@@ -10,8 +10,8 @@ android {
         applicationId = "com.bharti.alertalarm"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "2.5"
+        versionCode = 8
+        versionName = "2.6"
     }
 
     // Same key on every GitHub build, so a new APK installs over the old one (no uninstall needed)

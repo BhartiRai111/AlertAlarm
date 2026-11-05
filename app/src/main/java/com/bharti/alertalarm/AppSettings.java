@@ -126,6 +126,33 @@ final class AppSettings {
         TimeText.use24h = on;
     }
 
+    // ------------------------------------------------------------------ bedtime + calendar
+
+    static boolean bedtimeOn(Context c) {
+        return p(c).getBoolean("bedtime_on", false);
+    }
+
+    static void setBedtimeOn(Context c, boolean on) {
+        p(c).edit().putBoolean("bedtime_on", on).apply();
+    }
+
+    /** Minutes after midnight (default 11:00 PM). */
+    static int bedtimeMinutes(Context c) {
+        return p(c).getInt("bedtime_minutes", 23 * 60);
+    }
+
+    static void setBedtimeMinutes(Context c, int minutes) {
+        p(c).edit().putInt("bedtime_minutes", minutes).apply();
+    }
+
+    static boolean calendarSync(Context c) {
+        return p(c).getBoolean("calendar_sync", false);
+    }
+
+    static void setCalendarSync(Context c, boolean on) {
+        p(c).edit().putBoolean("calendar_sync", on).apply();
+    }
+
     // ------------------------------------------------------------------ backup
 
     static void exportTo(Context c, org.json.JSONObject o) throws org.json.JSONException {
@@ -137,6 +164,8 @@ final class AppSettings {
         o.put("volume_lock", volumeLock(c));
         o.put("theme", theme(c));
         o.put("use_24h", use24h(c));
+        o.put("bedtime_on", bedtimeOn(c));
+        o.put("bedtime_minutes", bedtimeMinutes(c));
     }
 
     static void importFrom(Context c, org.json.JSONObject o) {
@@ -149,6 +178,8 @@ final class AppSettings {
         if (o.has("volume_lock")) e.putBoolean("volume_lock", o.optBoolean("volume_lock", true));
         if (o.has("theme")) e.putString("theme", o.optString("theme", THEME_DARK));
         if (o.has("use_24h")) e.putBoolean("use_24h", o.optBoolean("use_24h", false));
+        if (o.has("bedtime_on")) e.putBoolean("bedtime_on", o.optBoolean("bedtime_on", false));
+        if (o.has("bedtime_minutes")) e.putInt("bedtime_minutes", o.optInt("bedtime_minutes", 23 * 60));
         e.apply();
         TimeText.use24h = o.optBoolean("use_24h", use24h(c));
     }

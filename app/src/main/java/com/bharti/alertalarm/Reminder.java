@@ -36,6 +36,8 @@ public class Reminder {
     /** Answer to "Did you finish it?" for the occurrence that started at resultFor (TaskCheck constants). */
     public int result;
     public long resultFor;
+    /** Own recorded voice message (file path), played instead of text-to-speech. Null = none. */
+    public String voicePath;
 
     public Reminder(long id, String task, long startMillis, long endMillis) {
         this.id = id;
@@ -160,6 +162,9 @@ public class Reminder {
         o.put("duration", durationMs);
         o.put("result", result);
         o.put("result_for", resultFor);
+        if (voicePath != null) {
+            o.put("voice", voicePath);
+        }
         return o;
     }
 
@@ -180,6 +185,7 @@ public class Reminder {
         r.durationMs = o.optLong("duration", r.durationMs);
         r.result = o.optInt("result", 0);
         r.resultFor = o.optLong("result_for", 0);
+        r.voicePath = o.has("voice") ? o.optString("voice", null) : null;
         return r;
     }
 }

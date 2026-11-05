@@ -22,5 +22,6 @@ public class BootReceiver extends BroadcastReceiver {
         }
         // Volume schedules (Meeting / Travel / Prayer) need their wake-ups again too
         VolumeManager.reconcile(context);
+        Bedtime.schedule(context);
     }
 }

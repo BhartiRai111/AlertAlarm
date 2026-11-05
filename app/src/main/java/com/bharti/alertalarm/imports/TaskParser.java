@@ -193,6 +193,9 @@ public final class TaskParser {
     }
 
     static ImportItem parseFree(String line, Calendar today) {
+        // "2 to 4 pm" / "2-4 pm": both are times, the first gets ":00" so it is recognised
+        line = line.replaceAll("(?i)(?<![\\d:./-])(\\d{1,2})\\s*(?:-|–|to)\\s*(\\d{1,2})\\s*(a\\.?\\s?m\\.?|p\\.?\\s?m\\.?)(?![a-z])",
+                "$1:00 to $2:00 $3");
         StringBuilder rest = new StringBuilder(line);
 
         // Repeat words

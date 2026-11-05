@@ -44,6 +44,17 @@
         <TextView
             style="@style/Label"
             android:layout_marginTop="12dp"
+            android:text="Bedtime and calendar" />
+
+        <LinearLayout
+            android:id="@+id/remindersSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_marginTop="12dp"
             android:text="Display" />
 
         <LinearLayout

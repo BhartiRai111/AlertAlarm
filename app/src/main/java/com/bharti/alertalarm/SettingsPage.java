@@ -49,6 +49,8 @@ final class SettingsPage {
     private final LinearLayout display;
     private final LinearLayout backup;
     private final LinearLayout help;
+    private final LinearLayout reminders;
+    private final ActivityResultLauncher<String> calendarPermission;
     private final LayoutInflater inflater;
     private TextToSpeech testVoice;
 
@@ -64,6 +66,14 @@ final class SettingsPage {
         display = activity.findViewById(R.id.displaySection);
         backup = activity.findViewById(R.id.backupSection);
         help = activity.findViewById(R.id.helpSection);
+        reminders = activity.findViewById(R.id.remindersSection);
+        calendarPermission = activity.registerForActivityResult(new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    AppSettings.setCalendarSync(activity, granted);
+                    toast(granted ? "Calendar events now show in the Calendar tab"
+                            : "Calendar permission is needed to show your events");
+                    render();
+                });
 
         tonePicker = activity.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 this::onTonePicked);
@@ -109,8 +119,40 @@ final class SettingsPage {
         renderVoice();
         renderSound();
         renderDisplay();
+        renderReminders();
         renderHelp();
         renderBackup();
+    }
+
+    // ================================================================== bedtime + calendar
+
+    private void renderReminders() {
+        reminders.removeAllViews();
+        switchRow(reminders, "Bedtime reminder", "A notice at night with tomorrow's first task",
+                AppSettings.bedtimeOn(activity), (b, on) -> {
+                    AppSettings.setBedtimeOn(activity, on);
+                    Bedtime.schedule(activity);
+                    if (on) {
+                        toast("Bedtime reminder on: every night at " + TimeText.clock(AppSettings.bedtimeMinutes(activity)));
+                    }
+                });
+        int minutes = AppSettings.bedtimeMinutes(activity);
+        valueRow(reminders, "Bedtime", "When the bedtime reminder comes", TimeText.clock(minutes), () ->
+                new android.app.TimePickerDialog(activity, (p, h, m) -> {
+                    AppSettings.setBedtimeMinutes(activity, h * 60 + m);
+                    Bedtime.schedule(activity);
+                    render();
+                }, minutes / 60, minutes % 60, TimeText.use24h).show());
+        switchRow(reminders, "Google Calendar events", "Show your phone's calendar events in the Calendar tab",
+                CalendarEvents.enabled(activity), (b, on) -> {
+                    if (!on) {
+                        AppSettings.setCalendarSync(activity, false);
+                    } else if (CalendarEvents.hasPermission(activity)) {
+                        AppSettings.setCalendarSync(activity, true);
+                    } else {
+                        calendarPermission.launch(android.Manifest.permission.READ_CALENDAR);
+                    }
+                });
     }
 
     // ================================================================== troubleshooting

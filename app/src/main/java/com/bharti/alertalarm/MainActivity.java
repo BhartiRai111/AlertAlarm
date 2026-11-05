@@ -50,6 +50,16 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private List<Reminder> all = new ArrayList<>();
+
+    /** "Say it" from the Home screen: speech -> New alarm screen, filled in. */
+    private final androidx.activity.result.ActivityResultLauncher<Intent> speech =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        String heard = VoiceInput.heard(result);
+                        if (heard != null) {
+                            startActivity(VoiceInput.addScreenFor(this, heard));
+                        }
+                    });
     private int tab = R.id.nav_home;
 
     private View homePage;
@@ -235,6 +245,14 @@ public class MainActivity extends AppCompatActivity {
         bannerButton = findViewById(R.id.bannerButton);
         findViewById(R.id.seeAll).setOnClickListener(v -> bottomNav.setSelectedItemId(R.id.nav_tasks));
         findViewById(R.id.homeImport).setOnClickListener(v -> startActivity(new Intent(this, ImportActivity.class)));
+        findViewById(R.id.homeVoice).setOnClickListener(v -> {
+            try {
+                speech.launch(VoiceInput.recognizeIntent());
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(this, "Voice typing is not available. Install or update the Google app.",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void renderHome(long now) {
@@ -386,6 +404,21 @@ public class MainActivity extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         float density = getResources().getDisplayMetrics().density;
 
+        // Phone calendar events (Google Calendar) for this month, by day
+        java.util.Map<Long, List<CalendarEvents.Event>> events = new java.util.HashMap<>();
+        Calendar monthEnd = (Calendar) day.clone();
+        monthEnd.add(Calendar.MONTH, 1);
+        for (CalendarEvents.Event e : CalendarEvents.between(this, Ui.startOfDay(day.getTimeInMillis()),
+                Ui.startOfDay(monthEnd.getTimeInMillis()))) {
+            long key = Ui.startOfDay(e.begin);
+            List<CalendarEvents.Event> list = events.get(key);
+            if (list == null) {
+                list = new ArrayList<>();
+                events.put(key, list);
+            }
+            list.add(e);
+        }
+
         for (int row = 0; row < rows; row++) {
             LinearLayout line = new LinearLayout(this);
             line.setOrientation(LinearLayout.HORIZONTAL);
@@ -401,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
                     day.set(Calendar.DAY_OF_MONTH, num);
                     long dayStart = Ui.startOfDay(day.getTimeInMillis());
                     bindDay(cell, num, dayStart, dayStart == selectedDay, dayStart == today,
-                            !Ui.entriesOn(all, dayStart).isEmpty());
+                            !Ui.entriesOn(all, dayStart).isEmpty() || events.containsKey(dayStart));
                 }
                 line.addView(cell);
             }
@@ -412,7 +445,13 @@ public class MainActivity extends AppCompatActivity {
         List<Ui.Entry> entries = Ui.entriesOn(all, selectedDay);
         dayTitle.setText(selectedDay == today ? "Today"
                 : new SimpleDateFormat("EEE, d MMM", Locale.ENGLISH).format(new Date(selectedDay)));
-        dayCount.setText(entries.isEmpty() ? "" : entries.size() + (entries.size() == 1 ? " alarm" : " alarms"));
+        List<CalendarEvents.Event> dayEvents = events.containsKey(selectedDay) ? events.get(selectedDay)
+                : CalendarEvents.between(this, selectedDay, Ui.nextDay(selectedDay));
+        String count = entries.isEmpty() ? "" : entries.size() + (entries.size() == 1 ? " alarm" : " alarms");
+        if (!dayEvents.isEmpty()) {
+            count += (count.isEmpty() ? "" : " · ") + dayEvents.size() + (dayEvents.size() == 1 ? " event" : " events");
+        }
+        dayCount.setText(count);
         dayList.removeAllViews();
         for (Ui.Entry e : entries) {
             Reminder r = e.reminder;
@@ -425,7 +464,32 @@ public class MainActivity extends AppCompatActivity {
             row.setOnClickListener(v -> openDetail(r));
             dayList.addView(row);
         }
-        dayEmpty.setVisibility(entries.isEmpty() ? View.VISIBLE : View.GONE);
+        for (CalendarEvents.Event e : dayEvents) {
+            dayList.addView(eventRow(e));
+        }
+        dayEmpty.setVisibility(entries.isEmpty() && dayEvents.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    /** A Google Calendar event: tap to make an alarm from it. */
+    private View eventRow(CalendarEvents.Event e) {
+        View row = LayoutInflater.from(this).inflate(R.layout.item_alarm, dayList, false);
+        android.widget.ImageView icon = row.findViewById(R.id.itemIcon);
+        icon.setImageResource(R.drawable.ic_calendar);
+        icon.setBackgroundResource(R.drawable.bg_icon_done);
+        icon.setImageTintList(android.content.res.ColorStateList.valueOf(Ui.color(this, R.color.accent)));
+        TextView title = row.findViewById(R.id.itemTitle);
+        title.setText(e.title);
+        title.setTextColor(Ui.color(this, R.color.text));
+        ((TextView) row.findViewById(R.id.itemMeta)).setText("📅 " + (e.calendar != null ? e.calendar : "Calendar")
+                + " · " + (e.allDay ? "All day" : TimeText.duration(e.end - e.begin)) + " · Tap to set an alarm");
+        TextView time = row.findViewById(R.id.itemTime);
+        time.setVisibility(View.VISIBLE);
+        time.setText(e.allDay ? "All day" : TimeText.time(e.begin));
+        row.setOnClickListener(v -> startActivity(new Intent(this, AddReminderActivity.class)
+                .putExtra(AddReminderActivity.EXTRA_TASK, e.title)
+                .putExtra(AddReminderActivity.EXTRA_START, CalendarEvents.alarmStart(e))
+                .putExtra(AddReminderActivity.EXTRA_DURATION, CalendarEvents.alarmDuration(e))));
+        return row;
     }
 
     private void bindDay(View cell, int num, long dayStart, boolean selected, boolean isToday, boolean busy) {
